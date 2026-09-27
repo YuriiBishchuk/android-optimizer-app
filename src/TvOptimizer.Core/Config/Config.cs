@@ -32,7 +32,7 @@ public static class ConfigUrls
 {
     // TODO: поміняй на свій GitHub user/repo
     public static string UrlBase { get; set; } =
-        "https://raw.githubusercontent.com/astellias/android-tv-optimizer/main";
+        "https://raw.githubusercontent.com/YuriiBishchuk/android-tv-optimizer/main";
 
     public static string DeviceConf(string name) => $"{UrlBase}/devices/{name}.conf";
     public static string Curated(string name) => $"{UrlBase}/data/community/curated/{name}";
