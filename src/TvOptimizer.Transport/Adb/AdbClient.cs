@@ -57,7 +57,7 @@ public sealed class AdbClient : IAsyncDisposable
         try
         {
             // Step 1: Send CNXN (empty payload)
-            await SendPacketAsync(s, CnxN, 0x01000000u, 4096u, Array.Empty<byte>(), ct);
+            await SendPacketAsync(s, CnxN, 0x01000000u, 4096u, _rsa.ExportSubjectPublicKeyInfo(), ct);
 
             // Step 2: Receive CNXN from device and extract its public key.
             var hdr = new byte[24];
@@ -66,7 +66,7 @@ public sealed class AdbClient : IAsyncDisposable
             uint a0 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(4, 4));
             uint a1 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(8, 4));
             uint len = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(12, 4));
-            byte[] pl = len > 0 ? new byte[len] : Array.Empty<byte>();
+            byte[] pl = len > 0 ? new byte[len] : _rsa.ExportSubjectPublicKeyInfo();
             if (len > 0) await ReadExactAsync(s, pl, ct);
 
             if (cmd != CnxN)
@@ -78,7 +78,7 @@ public sealed class AdbClient : IAsyncDisposable
             _pairedDevicePublicKey = pl;
 
             // Step 3: Send AUTH (a0=1) with signature of the device's public key.
-            var signature = _rsa.SignData(_pairedDevicePublicKey, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            var signature = _rsa.SignData(_pairedDevicePublicKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             await SendPacketAsync(s, Auth, 1u, 0u, signature, ct);
 
             // Step 4: Receive AUTH (a0=2) from device and verify the signature.
@@ -87,7 +87,7 @@ public sealed class AdbClient : IAsyncDisposable
             a0 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(4, 4));
             a1 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(8, 4));
             len = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(12, 4));
-            pl = len > 0 ? new byte[len] : Array.Empty<byte>();
+            pl = len > 0 ? new byte[len] : _rsa.ExportSubjectPublicKeyInfo();
             if (len > 0) await ReadExactAsync(s, pl, ct);
 
             if (cmd != Auth || a0 != 2u)
@@ -100,7 +100,7 @@ public sealed class AdbClient : IAsyncDisposable
             if (!deviceRsa.VerifyData(
                     _pairedDevicePublicKey,   // What we signed: the device's public key.
                     pl,
-                    HashAlgorithmName.SHA1,
+                    HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1))
             {
                 throw new CryptographicException("Failed to verify device's signature during pairing");
@@ -135,7 +135,7 @@ public sealed class AdbClient : IAsyncDisposable
         {
             // Public key exchange authentication (used after pairing).
             // Step 1: Send CNXN (empty payload)
-            await SendAsync(CnxN, 0x01000000u, 4096u, Array.Empty<byte>(), ct);
+            await SendAsync(CnxN, 0x01000000u, 4096u, _rsa.ExportSubjectPublicKeyInfo(), ct);
 
             // Step 2: Receive CNXN from device and get its public key.
             var hdr = new byte[24];
@@ -144,7 +144,7 @@ public sealed class AdbClient : IAsyncDisposable
             uint a0 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(4, 4));
             uint a1 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(8, 4));
             uint len = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(12, 4));
-            byte[] pl = len > 0 ? new byte[len] : Array.Empty<byte>();
+            byte[] pl = len > 0 ? new byte[len] : _rsa.ExportSubjectPublicKeyInfo();
             if (len > 0) await ReadExactAsync(s, pl, ct);
 
             if (cmd != CnxN)
@@ -155,7 +155,7 @@ public sealed class AdbClient : IAsyncDisposable
             byte[] devicePublicKey = pl;
 
             // Step 3: Send AUTH (a0=1) with signature of the device's public key.
-            var signature = _rsa.SignData(devicePublicKey, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            var signature = _rsa.SignData(devicePublicKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             await SendAsync(Auth, 1u, 0u, signature, ct);
 
             // Step 4: Receive AUTH (a0=2) from device and verify.
@@ -164,7 +164,7 @@ public sealed class AdbClient : IAsyncDisposable
             a0 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(4, 4));
             a1 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(8, 4));
             len = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(12, 4));
-            pl = len > 0 ? new byte[len] : Array.Empty<byte>();
+            pl = len > 0 ? new byte[len] : _rsa.ExportSubjectPublicKeyInfo();
             if (len > 0) await ReadExactAsync(s, pl, ct);
 
             if (cmd != Auth || a0 != 2u)
@@ -177,7 +177,7 @@ public sealed class AdbClient : IAsyncDisposable
             if (!deviceRsa.VerifyData(
                     devicePublicKey,   // What we signed: the device's public key.
                     pl,
-                    HashAlgorithmName.SHA1,
+                    HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1))
             {
                 throw new CryptographicException("Failed to verify device's signature");
@@ -273,11 +273,11 @@ public sealed class AdbClient : IAsyncDisposable
                 uint a0 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(4, 4));
                 uint a1 = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(8, 4));
                 uint len = BinaryPrimitives.ReadUInt32LittleEndian(hdr.AsSpan(12, 4));
-                byte[] pl = len > 0 ? new byte[len] : Array.Empty<byte>();
+                byte[] pl = len > 0 ? new byte[len] : _rsa.ExportSubjectPublicKeyInfo();
                 if (len > 0) await ReadExactAsync(s, pl, default);
                 if (cmd == Auth && a0 == 1)
                 {
-                    var sig = _rsa.SignData(pl, HashAlgorithmName.SHA1,
+                    var sig = _rsa.SignData(pl, HashAlgorithmName.SHA256,
                         RSASignaturePadding.Pkcs1);
                     await SendAsync(Auth, 2, 0, sig);
                 }
@@ -287,12 +287,12 @@ public sealed class AdbClient : IAsyncDisposable
                 }
                 else if (cmd == Wrte)
                 {
-                    await SendAsync(Okay, 1, a0, Array.Empty<byte>());
+                    await SendAsync(Okay, 1, a0, _rsa.ExportSubjectPublicKeyInfo());
                     _buf.AddRange(pl);
                 }
                 else if (cmd == Clse)
                 {
-                    await SendAsync(Clse, 1, a0, Array.Empty<byte>());
+                    await SendAsync(Clse, 1, a0, _rsa.ExportSubjectPublicKeyInfo());
                     _done.TrySetResult(true);
                 }
             }

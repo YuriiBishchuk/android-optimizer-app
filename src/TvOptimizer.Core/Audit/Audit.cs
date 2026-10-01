@@ -96,12 +96,12 @@ public static class AuditEngine
             Tier tier;
             if (isProtected)
                 tier = Tier.Protected;
-            else if (isHeuristic)
-                tier = Tier.Heuristic;
-            else if (isInTier2)
-                tier = Tier.Review;
             else if (isInTier1)
                 tier = Tier.Safe;
+            else if (isInTier2)
+                tier = Tier.Review;
+            else if (isHeuristic)
+                tier = Tier.Heuristic;
             else
                 tier = Tier.Unidentified;
 

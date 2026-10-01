@@ -1,3 +1,4 @@
+using System.Net.Security;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -64,6 +65,9 @@ namespace TvOptimizer.Transport.Tests
                     _ = HandleClientAsync(client, serverCertificate, hostPublicKey, devicePublicKey, hostRsa, deviceRsa, ct);
                 }
             }
+            catch (OperationCanceledException)
+            {
+            }
             finally
             {
                 listener.Stop();
@@ -100,13 +104,8 @@ namespace TvOptimizer.Transport.Tests
             // Verify the payload contains the host public key (we expect it to be exactly the public key)
             Assert.Equal(hostPublicKey, hostKeyPayload);
 
-            // Now send CNXN from device with device public key and signature of host public key
-            var signature = deviceRsa.SignData(hostPublicKey, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
-            var payload = new byte[devicePublicKey.Length + signature.Length];
-            Buffer.BlockCopy(devicePublicKey, 0, payload, 0, devicePublicKey.Length);
-            Buffer.BlockCopy(signature, 0, payload, devicePublicKey.Length, signature.Length);
-
-            await SendPacketAsync(sslStream, 0x4E584E43u, 0u, 0u, payload, ct);
+            // Now send CNXN from device with device public key
+            await SendPacketAsync(sslStream, 0x4E584E43u, 0u, 0u, devicePublicKey, ct);
 
             // Read AUTH from host (a0=1)
             await ReadExactAsync(sslStream, buffer, ct);
@@ -129,9 +128,9 @@ namespace TvOptimizer.Transport.Tests
             try
             {
                 verified = hostRsa.VerifyData(
-                    authPayload,
                     devicePublicKey,
-                    HashAlgorithmName.SHA1,
+                    authPayload,
+                    HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1);
             }
             catch
@@ -141,8 +140,8 @@ namespace TvOptimizer.Transport.Tests
 
             Assert.True(verified, "Host signature verification failed");
 
-            // Send AUTH from device (a0=2) with signature of host public key
-            var authSignature = deviceRsa.SignData(hostPublicKey, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            // Send AUTH from device (a0=2) with signature of device public key
+            var authSignature = deviceRsa.SignData(devicePublicKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             await SendPacketAsync(sslStream, 0x48545541u, 2u, 0u, authSignature, ct);
 
             // Wait for client to close (or we can close after a delay)
@@ -185,7 +184,7 @@ namespace TvOptimizer.Transport.Tests
         {
             var distinguishedName = new X500DistinguishedName("CN=localhost");
             using var rsa = RSA.Create(2048);
-            var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             request.CertificateExtensions.Add(
                 new X509BasicConstraintsExtension(false, false, 0, false));
             request.CertificateExtensions.Add(

@@ -9,7 +9,7 @@ namespace TvOptimizer.Core.Tests;
 
 public class AuditEngineTests
 {
-    private static IReadOnlySet<string> EmptySet = new HashSet<string>();
+    private static readonly IReadOnlySet<string> EmptySet = new HashSet<string>();
 
     [Fact]
     public void AuditEngine_CategorizesSafePackage()
@@ -22,8 +22,8 @@ public class AuditEngineTests
 
         var result = AuditEngine.Run(installed, null, EmptySet);
 
-        Assert.Contains("com.google.android.gms", result.ProtectedPresent);
-        Assert.Contains("com.android.systemui", result.ProtectedPresent);
+        Assert.Contains(result, r => r.PackageName == "com.google.android.gms" && r.Tier == Tier.Protected);
+        Assert.Contains(result, r => r.PackageName == "com.android.systemui" && r.Tier == Tier.Protected);
     }
 
     [Fact]
@@ -33,12 +33,14 @@ public class AuditEngineTests
         {
             "com.google.android.gms",
             "com.android.systemui",
+            "com.google.android.tvlauncher",
+            "com.google.android.tvrecommendations"
         };
 
         var result = AuditEngine.Run(installed, null, EmptySet);
 
-        Assert.True(result.GenericMode);
-        Assert.Contains("com.google.android.gms", result.ProtectedPresent);
-        Assert.Contains("com.android.systemui", result.ProtectedPresent);
+        Assert.Contains(result, r => r.PackageName == "com.google.android.gms" && r.Tier == Tier.Protected);
+        Assert.Contains(result, r => r.PackageName == "com.google.android.tvlauncher" && r.Tier == Tier.Protected);
+        Assert.Contains(result, r => r.PackageName == "com.google.android.tvrecommendations" && r.Tier == Tier.Safe);
     }
 }

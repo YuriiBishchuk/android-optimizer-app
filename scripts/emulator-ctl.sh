@@ -15,6 +15,8 @@ PID_DIR="/tmp/android-emulators"
 mkdir -p "$PID_DIR"
 
 ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+export ANDROID_AVD_HOME=/opt/data/.android/avd
+export ANDROID_USER_HOME=/opt/data/.android
 EMULATOR="$ANDROID_HOME/emulator/emulator"
 ADB="$ANDROID_HOME/platform-tools/adb"
 AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
