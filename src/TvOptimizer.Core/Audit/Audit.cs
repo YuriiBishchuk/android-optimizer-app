@@ -23,8 +23,8 @@ public sealed record AuditResult(
 public static class AuditEngine
 {
     private static readonly Regex HeuristicRe = new(
-        @"analytics|telemetry|tracker|[^a-z]acr([^a-z]|$)|adservice|recommend|promo|demo|retail|partnercustomizer|printspooler|nearby\.halfsheet|feedback|federated|personalization",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            @"analytics|telemetry|tracker|acr|adservice|recommend|promo|demo|retail|partnercustomizer|printspooler|nearby\\.halfsheet|feedback|federated|personalization",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex NoiseRe = new(
         @"^(android|com\.android|com\.google\.android\.(overlay|ext|module|ondevice|federated|adservices)|mediatek\.factorymenu)\b",
@@ -43,7 +43,7 @@ public static class AuditEngine
         bool generic = device is null;
         IReadOnlySet<string> tier1 = generic
             ? Guard.UniversalSafe
-            : new HashSet<string>(device!.SafeRemoveSet, StringComparer.Ordinal);
+            : Guard.UniversalSafe.Union(device!.SafeRemoveSet).ToHashSet(StringComparer.Ordinal);
         IReadOnlySet<string> deviceProtected = generic
             ? Guard.UniversalProtected
             : new HashSet<string>(device!.ProtectedSet, StringComparer.Ordinal);

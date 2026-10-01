@@ -1,0 +1,191 @@
+using System.Collections.Generic;
+using TvOptimizer.Core.Safety;
+using TvOptimizer.Core.Audit;
+using TvOptimizer.Core.Config;
+using Xunit;
+
+namespace TvOptimizer.Core.Tests;
+
+public class GuardTests
+{
+    private static readonly string[] NeverTouchExpected = new[]
+    {
+        "android",
+        "com.android.systemui",
+        "com.android.shell",
+        "com.android.tv.settings",
+        "com.android.cts.ctsshim",
+        "com.android.cts.priv.ctsshim",
+        "com.google.android.tv",
+        "mitv.service",
+        "com.mitv.livetv",
+        "com.mitv.setup",
+        "com.mitv.videoplayer",
+        "com.google.android.gms",
+        "com.android.vending",
+        "com.google.android.apps.tv.launcherx",
+        "com.google.android.tungsten.setupwraith",
+        "com.android.providers.tv",
+        "com.android.providers.media",
+        "com.android.providers.downloads",
+        "com.google.android.tv.remote.service",
+    };
+
+    [Fact]
+    public void NeverTouch_ContainsEveryCriticalEntry()
+    {
+        foreach (string pkg in NeverTouchExpected)
+        {
+            Assert.Contains(pkg, Guard.NeverTouch);
+        }
+    }
+
+    [Fact]
+    public void NeverTouch_HasNoExtraEntries()
+    {
+        var neverTouchSet = new HashSet<string>(NeverTouchExpected);
+        foreach (string pkg in Guard.NeverTouch)
+        {
+            Assert.Contains(pkg, neverTouchSet);
+        }
+        Assert.Equal(NeverTouchExpected.Length, Guard.NeverTouch.Count);
+    }
+
+    [Fact]
+    public void StockLauncher_IsInNeverTouch()
+    {
+        Assert.Contains("com.google.android.apps.tv.launcherx", Guard.NeverTouch);
+    }
+
+    [Fact]
+    public void CanRemove_ReturnsFalse_ForNeverTouchPackages()
+    {
+        bool result = Guard.CanRemove("com.google.android.apps.tv.launcherx", Guard.UniversalProtected, Guard.DefaultStockLauncher);
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void CanRemove_ReturnsTrue_ForSafeToRemovePackage()
+    {
+        var emptyProtected = new HashSet<string>(System.StringComparer.Ordinal);
+        bool result = Guard.CanRemove("com.xiaomi.statistic", emptyProtected, Guard.DefaultStockLauncher);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void FilterBatch_SeparatesAllowedAndBlocked()
+    {
+        var pkgs = new[]
+        {
+            "com.xiaomi.statistic",
+            "com.mitv.tvhome.atv",
+            "com.google.android.gms",
+            "com.example.safeapp",
+            "com.mitv.livetv",
+        };
+
+        var emptyProtected = new HashSet<string>(System.StringComparer.Ordinal);
+        var (allowed, blocked) = Guard.FilterBatch(pkgs, emptyProtected, Guard.DefaultStockLauncher);
+
+        Assert.Contains("com.xiaomi.statistic", allowed);
+        Assert.Contains("com.mitv.tvhome.atv", blocked);
+        Assert.Contains("com.google.android.gms", blocked);
+    }
+}
+
+public class ConfigParserTests
+{
+    private const string XiaomiConfExcerpt = "# Xiaomi TV A Pro 2026\n\n"
+        "# SAFE_REMOVE\n"
+        "SAFE_REMOVE=(\n"
+        "  \"com.xiaomi.statistic\"\n"
+        "  \"com.mitv.tvhome.atv\"\n"
+        ")\n\n"
+        "# OPTIONAL\n"
+        "OPTIONAL=(\n"
+        "  \"com.xiaomi.tvqs.overseas.y24\"\n"
+        "  \"com.mitv.overseaservice\"\n"
+        ")\n\n"
+        "# PROTECTED\n"
+        "PROTECTED=(\n"
+        "  \"android\"\n"
+        "  \"com.android.systemui\"\n"
+        ")\n\n"
+        "# DISABLE_ONLY\n"
+        "DISABLE_ONLY=(\n"
+        "  \"com.google.android.tv.remote.service\"\n"
+        ")\n";
+
+    [Fact]
+    public void ParseDeviceConf_ExtractsBasicFields()
+    {
+        DeviceConfig config = DeviceConfig.ParseDeviceConf("xiaomi_a_pro_2026", XiaomiConfExcerpt);
+
+        Assert.Equal("xiaomi_a_pro_2026", config.Name);
+        Assert.Equal("MiTV-MZTU0", config.Model);
+        Assert.Equal("Xiaomi", config.Maker);
+    }
+
+    [Fact]
+    public void ParseDeviceConf_ExtractsSafeRemoveSet()
+    {
+        DeviceConfig config = DeviceConfig.ParseDeviceConf("xiaomi_a_pro_2026", XiaomiConfExcerpt);
+
+        Assert.Contains("com.xiaomi.statistic", config.SafeRemoveSet);
+        Assert.Contains("com.mitv.tvhome.atv", config.SafeRemoveSet);
+        Assert.Contains("com.miui.tv.analytics", config.SafeRemoveSet);
+    }
+
+    [Fact]
+    public void ParseDeviceConf_ExtractsProtectedSet()
+    {
+        DeviceConfig config = DeviceConfig.ParseDeviceConf("xiaomi_a_pro_2026", XiaomiConfExcerpt);
+
+        Assert.Contains("android", config.ProtectedSet);
+        Assert.Contains("com.android.systemui", config.ProtectedSet);
+    }
+
+    [Fact]
+    public void ParseDeviceConf_ExtractsDisableOnlySet()
+    {
+        DeviceConfig config = DeviceConfig.ParseDeviceConf("xiaomi_a_pro_2026", XiaomiConfExcerpt);
+
+        Assert.Contains("com.google.android.tv.remote.service", config.DisableOnlySet);
+    }
+}
+
+public class AuditEngineTests
+{
+    [Fact]
+    public void AuditEngine_CategorizesSafePackage()
+    {
+        var installed = new HashSet<string>
+        {
+            "com.xiaomi.statistic",
+            "com.google.android.gms",
+        };
+
+        var result = AuditEngine.Run(installed, null, new HashSet<string>());
+
+        Assert.Contains("com.xiaomi.statistic", result.SafePresent);
+        Assert.Contains("com.google.android.gms", result.ProtectedPresent);
+    }
+
+    [Fact]
+    public void AuditEngine_GenericMode_UsesUniversalSets()
+    {
+        var installed = new HashSet<string>
+        {
+            "com.xiaomi.statistic",
+            "com.google.android.gms",
+            "com.android.systemui",
+        };
+
+        var result = AuditEngine.Run(installed, null, new HashSet<string>());
+
+        Assert.True(result.GenericMode);
+        Assert.Contains("com.xiaomi.statistic", result.SafePresent);
+        Assert.Contains("com.google.android.gms", result.ProtectedPresent);
+        Assert.Contains("com.android.systemui", result.ProtectedPresent);
+    }
+}

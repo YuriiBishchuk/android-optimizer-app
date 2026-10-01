@@ -8,25 +8,25 @@ public static class Guard
     public static readonly IReadOnlySet<string> NeverTouch = new HashSet<string>
     {
         "android",
-        "com.android.systemui",
-        "com.android.shell",
-        "com.android.tv.settings",
-        "com.android.cts.ctsshim",
-        "com.android.cts.priv.ctsshim",
-        "com.google.android.tv",
-        "mitv.service", // УВАГА: без префікса com. — так в прошивці Xiaomi!
-        "com.mitv.livetv",
-        "com.mitv.setup",
-        "com.mitv.videoplayer",
-        "com.google.android.gms",
-        "com.android.vending",
-        "com.google.android.apps.tv.launcherx", // fallback HOME — тільки enabled
-        "com.google.android.tungsten.setupwraith",
-        "com.android.providers.tv",
-        "com.android.providers.media",
-        "com.android.providers.downloads",
-        "com.google.android.tv.remote.service",
-    };
+                "com.android.systemui",
+                "com.android.shell",
+                "com.android.tv.settings",
+                "com.android.cts.ctsshim",
+                "com.android.cts.priv.ctsshim",
+                "com.google.android.tv",
+                "mitv.service",
+                "com.mitv.livetv",
+                "com.mitv.setup",
+                "com.mitv.videoplayer",
+                "com.google.android.gms",
+                "com.android.vending",
+                "com.google.android.apps.tv.launcherx",
+                "com.google.android.tungsten.setupwraith",
+                "com.android.providers.tv",
+                "com.android.providers.media",
+                "com.android.providers.downloads",
+                "com.google.android.tv.remote.service",
+            };
 
     /// <summary>Універсальний PROTECTED-мінімум для невідомого ТВ (generic-режим).</summary>
     public static readonly IReadOnlySet<string> UniversalProtected = new HashSet<string>
