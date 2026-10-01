@@ -20,7 +20,9 @@ public sealed record AuditResult(
     IReadOnlyList<string> ProtectedPresent,
     IReadOnlyList<string> ProtectedMissing,
     IReadOnlyList<string> UnidentifiedShown,
-    int UnidentifiedTotal)
+    int UnidentifiedTotal,
+    string? Label = null,
+    string? Description = null)
 {
     public string Details => $"Тир: {Tier}, Режим: {ModeName}";
     public bool NeedsAction => Tier == Tier.Review || Tier == Tier.Heuristic || Tier == Tier.Protected;
@@ -41,10 +43,12 @@ public static class AuditEngine
     /// <param name="installed">Встановлені пакети з `pm list packages`.</param>
     /// <param name="device">Конфіг пристрою або null (generic-режим).</param>
     /// <param name="curatedTier2">Об'єднаний curated TIER_2.</param>
+    /// <param name="uadApps">Словник UAD-додатків за id для позначки та опису.</param>
     public static List<AuditResult> Run(
         IReadOnlySet<string> installed,
         DeviceConfig? device,
-        IReadOnlySet<string> curatedTier2)
+        IReadOnlySet<string> curatedTier2,
+        IReadOnlyDictionary<string, UadAppInfo>? uadApps = null)
     {
         bool generic = device is null;
         IReadOnlySet<string> tier1 = generic
@@ -74,8 +78,6 @@ public static class AuditEngine
         known.UnionWith(tier1);
         known.UnionWith(tier2);
         known.UnionWith(deviceProtected);
-        known.UnionWith(Guard.NeverTouch);
-        known.UnionWith(Guard.UniversalProtected);
 
         string modeName = generic
             ? "GENERIC (невідомий ТВ, тільки UNIVERSAL_SAFE + curated)"
@@ -94,16 +96,57 @@ public static class AuditEngine
             bool isHeuristic = HeuristicRe.IsMatch(package);
 
             Tier tier;
-            if (isProtected)
-                tier = Tier.Protected;
-            else if (isInTier1)
-                tier = Tier.Safe;
-            else if (isInTier2)
-                tier = Tier.Review;
-            else if (isHeuristic)
-                tier = Tier.Heuristic;
+            string? label = null;
+            string? description = null;
+
+            // If we have UAD info for this package, use it for label/description and potentially for tier
+            if (uadApps != null && uadApps.TryGetValue(package, out var uadApp))
+            {
+                label = uadApp.Label;
+                description = uadApp.Description;
+
+                // If the package is not protected by device or universal lists, use UAD removal to determine tier
+                if (!isProtected)
+                {
+                    switch (uadApp.Removal)
+                    {
+                        case "Recommended": tier = Tier.Safe; break;
+                        case "Advanced":    tier = Tier.Review; break;
+                        case "Expert":      tier = Tier.Heuristic; break;
+                        case "Unsafe":      tier = Tier.Protected; break;
+                        default:            tier = Tier.Unidentified; break;
+                    }
+                }
+                else
+                {
+                    // Package is protected (by device or universal) -> override to Protected regardless of UAD removal
+                    tier = Tier.Protected;
+                }
+            }
             else
-                tier = Tier.Unidentified;
+            {
+                // No UAD info, fall back to original logic
+                if (isProtected)
+                {
+                    tier = Tier.Protected;
+                }
+                else if (isInTier1)
+                {
+                    tier = Tier.Safe;
+                }
+                else if (isInTier2)
+                {
+                    tier = Tier.Review;
+                }
+                else if (isHeuristic)
+                {
+                    tier = Tier.Heuristic;
+                }
+                else
+                {
+                    tier = Tier.Unidentified;
+                }
+            }
 
             results.Add(new AuditResult(
                 PackageName: package,
@@ -117,7 +160,9 @@ public static class AuditEngine
                 ProtectedPresent: new List<string>(),
                 ProtectedMissing: new List<string>(),
                 UnidentifiedShown: new List<string>(),
-                UnidentifiedTotal: 0
+                UnidentifiedTotal: 0,
+                Label: label,
+                Description: description
             ));
         }
 

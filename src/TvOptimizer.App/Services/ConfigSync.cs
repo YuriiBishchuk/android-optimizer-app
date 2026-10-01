@@ -21,6 +21,7 @@ public sealed class ConfigSync
     public IReadOnlySet<string> CuratedTier2 { get; private set; } = new HashSet<string>();
     public string Status { get; private set; } = "не синхронізовано";
     public DateTime? LastUpdatedUtc { get; private set; }
+    public IReadOnlyDictionary<string, UadAppInfo> UadApps => _service.GetUadApps();
 
     public ConfigSync()
     {

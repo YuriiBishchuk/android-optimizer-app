@@ -22,6 +22,14 @@ public sealed record DeviceConfig(
     public IReadOnlySet<string> ProtectedSet => Protected ?? new HashSet<string>();
     public IReadOnlySet<string> DisableOnlySet => DisableOnly ?? new HashSet<string>();
 }
+public sealed record UadEntry
+{
+    public string Id { get; init; } = default!;
+    public string Label { get; init; } = default!;
+    public string Description { get; init; } = default!;
+    public string Removal { get; init; } = default!;
+    public IReadOnlyList<string> Suggestions { get; init; } = new List<string>();
+}
 
 internal static class Guard_Defaults
 {
