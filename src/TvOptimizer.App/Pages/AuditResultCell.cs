@@ -10,17 +10,17 @@ public class AuditResultCell : Border
     public AuditResultCell()
     {
         StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) };
-        Stroke = Color.FromArgb("#e2e8f0");
+        Stroke = Color.FromArgb("#334155");
         StrokeThickness = 1;
         Padding = new Thickness(12, 8);
         Margin = new Thickness(0, 4);
-        BackgroundColor = Color.FromArgb("#f8fafc");
+        BackgroundColor = Color.FromArgb("#1e293b");
 
         var pkgLabel = new Label
         {
             FontAttributes = FontAttributes.Bold,
             FontSize = 14,
-            TextColor = Color.FromArgb("#0f172a"),
+            TextColor = Color.FromArgb("#f8fafc"),
             LineBreakMode = LineBreakMode.TailTruncation
         };
         pkgLabel.SetBinding(Label.TextProperty, "PackageName");
@@ -43,7 +43,7 @@ public class AuditResultCell : Border
         var modeLabel = new Label
         {
             FontSize = 12,
-            TextColor = Color.FromArgb("#64748b")
+            TextColor = Color.FromArgb("#94a3b8")
         };
         modeLabel.SetBinding(Label.TextProperty, "Details");
 

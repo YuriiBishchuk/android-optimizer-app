@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Storage;
 using TvOptimizer.App.Services;
@@ -30,52 +31,29 @@ public class ConnectPage : ContentPage
     public ConnectPage()
     {
         Title = "Підключення";
+        BackgroundColor = Color.FromArgb("#0f172a");
 
-        _hostEntry = new Entry
-        {
-            Placeholder = "IP адреса ТВ (напр. 192.168.0.50)",
-            Keyboard = Keyboard.Numeric,
-            Text = Preferences.Default.Get("last_tv_host", "127.0.0.1")
-        };
+        _hostEntry = CreateStyledEntry("IP адреса ТВ (напр. 192.168.0.50)", Preferences.Default.Get("last_tv_host", "192.168.0."));
+        _portEntry = CreateStyledEntry("Порт підключення (напр. 5555 або 37123)", Preferences.Default.Get("last_tv_port", "5555"));
+        _pairingPortEntry = CreateStyledEntry("Порт створення пари (з ТВ)", "");
+        _pairingCodeEntry = CreateStyledEntry("6-значний код підключення", "", maxLength: 6);
 
-        _portEntry = new Entry
-        {
-            Placeholder = "Порт підключення (напр. 5555 або 37123)",
-            Keyboard = Keyboard.Numeric,
-            Text = Preferences.Default.Get("last_tv_port", "5555")
-        };
-
-        _pairingPortEntry = new Entry
-        {
-            Placeholder = "Порт створення пари (з екрана ТВ)",
-            Keyboard = Keyboard.Numeric,
-            Text = ""
-        };
-
-        _pairingCodeEntry = new Entry
-        {
-            Placeholder = "6-значний код підключення",
-            Keyboard = Keyboard.Numeric,
-            MaxLength = 6,
-            Text = ""
-        };
-
-        _tlsSwitch = new Switch { IsToggled = false };
-        _pairingModeSwitch = new Switch { IsToggled = false };
+        _tlsSwitch = new Switch { IsToggled = false, OnColor = Color.FromArgb("#38bdf8"), ThumbColor = Colors.White };
+        _pairingModeSwitch = new Switch { IsToggled = false, OnColor = Color.FromArgb("#a855f7"), ThumbColor = Colors.White };
 
         _statusLabel = new Label
         {
             Text = "Стан: Очікування підключення",
-            FontSize = 16,
+            FontSize = 15,
             FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.Gray
+            TextColor = Color.FromArgb("#94a3b8")
         };
 
         _errorLabel = new Label
         {
             Text = "",
             FontSize = 13,
-            TextColor = Colors.Red,
+            TextColor = Color.FromArgb("#f87171"),
             IsVisible = false
         };
 
@@ -83,74 +61,86 @@ public class ConnectPage : ContentPage
         {
             Text = "",
             FontSize = 14,
-            TextColor = Colors.DarkGreen,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = Color.FromArgb("#4ade80"),
             IsVisible = false
         };
 
         _lastUpdatedLabel = new Label
         {
-            Text = "Оновлення конфігів: Завантаження...",
+            Text = "Конфіги: Локальний кеш",
             FontSize = 12,
-            TextColor = Colors.DimGray
+            TextColor = Color.FromArgb("#64748b")
         };
 
         _attributionLabel = new Label
         {
-            Text = "Правила: YuriiBishchuk/android-tv-optimizer",
+            Text = "Джерело правил: YuriiBishchuk/android-tv-optimizer (MIT)",
             FontSize = 11,
-            TextColor = Colors.DimGray
+            TextColor = Color.FromArgb("#475569")
         };
 
         _pairBtn = new Button
         {
-            Text = "Створити пару",
-            BackgroundColor = Colors.Purple,
-            TextColor = Colors.White
+            Text = "🔑 Створити пару",
+            BackgroundColor = Color.FromArgb("#9333ea"),
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 8
         };
         _pairBtn.Clicked += async (s, e) => await OnPairClicked();
 
         _connectBtn = new Button
         {
-            Text = "Підключитися",
-            BackgroundColor = Colors.DarkBlue,
-            TextColor = Colors.White
+            Text = "🔌 Підключитися",
+            BackgroundColor = Color.FromArgb("#2563eb"),
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 8
         };
         _connectBtn.Clicked += async (s, e) => await OnConnectClicked();
 
         _disconnectBtn = new Button
         {
-            Text = "Відключитися",
-            BackgroundColor = Colors.DarkRed,
+            Text = "❌ Відключитися",
+            BackgroundColor = Color.FromArgb("#dc2626"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 8,
             IsEnabled = false
         };
         _disconnectBtn.Clicked += async (s, e) => await OnDisconnectClicked();
 
         _retryBtn = new Button
         {
-            Text = "Повторити спробу",
-            BackgroundColor = Colors.DarkOrange,
+            Text = "🔄 Спробувати знову",
+            BackgroundColor = Color.FromArgb("#d97706"),
             TextColor = Colors.White,
+            CornerRadius = 8,
             IsVisible = false
         };
         _retryBtn.Clicked += async (s, e) => await OnConnectClicked();
 
         _refreshBtn = new Button
         {
-            Text = "Оновити правила",
-            FontSize = 12
+            Text = "🔄 Оновити правила",
+            BackgroundColor = Color.FromArgb("#334155"),
+            TextColor = Colors.White,
+            FontSize = 12,
+            CornerRadius = 6,
+            Padding = new Thickness(8, 4)
         };
         _refreshBtn.Clicked += async (s, e) => await OnRefreshClicked();
 
         _pairingSection = new VerticalStackLayout
         {
-            Spacing = 8,
+            Spacing = 10,
             IsVisible = false,
             Children =
             {
-                new Label { Text = "Порт створення пари:", FontAttributes = FontAttributes.Bold },
+                new Label { Text = "Порт створення пари (Pairing Port):", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
                 _pairingPortEntry,
-                new Label { Text = "Код створення пари (6 цифр):", FontAttributes = FontAttributes.Bold },
+                new Label { Text = "Код підключення (6 цифр):", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
                 _pairingCodeEntry,
                 _pairBtn
             }
@@ -158,97 +148,122 @@ public class ConnectPage : ContentPage
 
         _pairingModeSwitch.Toggled += (s, e) =>
         {
-            _pairingSection.IsVisible = _pairingModeSwitch.IsToggled;
+            _pairingSection.IsVisible = e.Value;
         };
 
-        var instructionsFrame = new Frame
+        var instructionsCard = CreateCard(new VerticalStackLayout
         {
-            Padding = 12,
-            BorderColor = Colors.LightSkyBlue,
-            Content = new VerticalStackLayout
+            Spacing = 6,
+            Children =
             {
-                Spacing = 6,
-                Children =
+                new Label { Text = "📱 Інструкція для Android 11+:", FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#f8fafc"), FontSize = 14 },
+                new Label { Text = "1. На ТВ: Налаштування → Для розробників → Бездротове налагодження (Увімкнути).", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
+                new Label { Text = "2. Якщо підключаєтесь вперше: увімкніть «Режим створення пари» нижче.", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
+                new Label { Text = "3. Після успішної пари: введіть основний порт ТВ та натисніть «Підключитися».", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
+            }
+        });
+
+        var tlsRow = new Grid
+        {
+            ColumnDefinitions = { new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto) }
+        };
+        tlsRow.Add(new Label { Text = "TLS шифрування (Android 11+)", TextColor = Color.FromArgb("#cbd5e1"), VerticalOptions = LayoutOptions.Center }, 0, 0);
+        tlsRow.Add(_tlsSwitch, 1, 0);
+
+        var pairModeRow = new Grid
+        {
+            ColumnDefinitions = { new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto) }
+        };
+        pairModeRow.Add(new Label { Text = "Режим створення пари (Pairing Mode)", TextColor = Color.FromArgb("#a855f7"), FontAttributes = FontAttributes.Bold, VerticalOptions = LayoutOptions.Center }, 0, 0);
+        pairModeRow.Add(_pairingModeSwitch, 1, 0);
+
+        var formCard = CreateCard(new VerticalStackLayout
+        {
+            Spacing = 10,
+            Children =
+            {
+                new Label { Text = "IP-адреса Android TV:", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
+                _hostEntry,
+                new Label { Text = "Основний порт ADB (Connection Port):", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
+                _portEntry,
+                tlsRow,
+                pairModeRow,
+                _pairingSection,
+                new HorizontalStackLayout
                 {
-                    new Label { Text = "📺 Інструкція з активації Wireless ADB на ТВ:", FontAttributes = FontAttributes.Bold, FontSize = 14 },
-                    new Label { Text = "1. Налаштування ТВ > Про пристрій > 7 разів натисніть Номер збірки", FontSize = 12 },
-                    new Label { Text = "2. Для розробників > Бездротове налагодження > УВІМКНУТИ", FontSize = 12 },
-                    new Label { Text = "3. Введіть IP та порт нижче (після перезавантаження ТВ порт змінюється!)", FontSize = 12, TextColor = Colors.DarkOrange }
+                    Spacing = 10,
+                    Children = { _connectBtn, _disconnectBtn, _retryBtn }
                 }
+            }
+        });
+
+        var syncCard = CreateCard(new VerticalStackLayout
+        {
+            Spacing = 8,
+            Children =
+            {
+                new HorizontalStackLayout
+                {
+                    Spacing = 10,
+                    Children = { _lastUpdatedLabel, _refreshBtn }
+                },
+                _attributionLabel
+            }
+        });
+
+        var mainLayout = new VerticalStackLayout
+        {
+            Padding = 16,
+            Spacing = 14,
+            Children =
+            {
+                new Label
+                {
+                    Text = "📺 Android TV Optimizer",
+                    FontSize = 20,
+                    FontAttributes = FontAttributes.Bold,
+                    TextColor = Color.FromArgb("#38bdf8"),
+                    HorizontalOptions = LayoutOptions.Center
+                },
+                _statusLabel,
+                _errorLabel,
+                _deviceInfoLabel,
+                instructionsCard,
+                formCard,
+                syncCard
             }
         };
 
-        var formFrame = new Frame
-        {
-            Padding = 15,
-            Content = new VerticalStackLayout
-            {
-                Spacing = 10,
-                Children =
-                {
-                    new Label { Text = "IP адреса ТВ:", FontAttributes = FontAttributes.Bold },
-                    _hostEntry,
-                    new Label { Text = "Порт ADB:", FontAttributes = FontAttributes.Bold },
-                    _portEntry,
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 10,
-                        Children = { new Label { Text = "TLS/SSL:", VerticalOptions = LayoutOptions.Center }, _tlsSwitch }
-                    },
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 10,
-                        Children = { new Label { Text = "Режим створення пари (Pairing):", VerticalOptions = LayoutOptions.Center }, _pairingModeSwitch }
-                    },
-                    _pairingSection,
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 10,
-                        HorizontalOptions = LayoutOptions.Center,
-                        Children = { _connectBtn, _disconnectBtn, _retryBtn }
-                    }
-                }
-            }
-        };
-
-        var syncFrame = new Frame
-        {
-            Padding = 12,
-            Content = new VerticalStackLayout
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 10,
-                        Children = { _lastUpdatedLabel, _refreshBtn }
-                    },
-                    _attributionLabel
-                }
-            }
-        };
-
-        Content = new ScrollView
-        {
-            Content = new VerticalStackLayout
-            {
-                Padding = 16,
-                Spacing = 15,
-                Children =
-                {
-                    new Label { Text = "Підключення до Android TV через ADB", FontSize = 18, FontAttributes = FontAttributes.Bold, HorizontalOptions = LayoutOptions.Center },
-                    _statusLabel,
-                    _errorLabel,
-                    _deviceInfoLabel,
-                    instructionsFrame,
-                    formFrame,
-                    syncFrame
-                }
-            }
-        };
-
+        Content = new ScrollView { Content = mainLayout, BackgroundColor = Color.FromArgb("#0f172a") };
         UpdateUiState();
+    }
+
+    private static Border CreateCard(View inner)
+    {
+        return new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(10) },
+            Stroke = Color.FromArgb("#334155"),
+            StrokeThickness = 1,
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            Padding = new Thickness(14),
+            Content = inner
+        };
+    }
+
+    private static Entry CreateStyledEntry(string placeholder, string text, int? maxLength = null)
+    {
+        var entry = new Entry
+        {
+            Placeholder = placeholder,
+            PlaceholderColor = Color.FromArgb("#64748b"),
+            TextColor = Color.FromArgb("#f8fafc"),
+            BackgroundColor = Color.FromArgb("#0f172a"),
+            Keyboard = Keyboard.Numeric,
+            Text = text
+        };
+        if (maxLength.HasValue) entry.MaxLength = maxLength.Value;
+        return entry;
     }
 
     protected override async void OnAppearing()
@@ -265,7 +280,7 @@ public class ConnectPage : ContentPage
         {
             case TvConnectionState.Idle:
                 _statusLabel.Text = "Стан: Очікування підключення";
-                _statusLabel.TextColor = Colors.Gray;
+                _statusLabel.TextColor = Color.FromArgb("#94a3b8");
                 _connectBtn.IsEnabled = true;
                 _disconnectBtn.IsEnabled = false;
                 _retryBtn.IsVisible = false;
@@ -275,7 +290,7 @@ public class ConnectPage : ContentPage
 
             case TvConnectionState.Pairing:
                 _statusLabel.Text = "Стан: Створення пари з ТВ...";
-                _statusLabel.TextColor = Colors.Purple;
+                _statusLabel.TextColor = Color.FromArgb("#c084fc");
                 _connectBtn.IsEnabled = false;
                 _disconnectBtn.IsEnabled = false;
                 _retryBtn.IsVisible = false;
@@ -283,7 +298,7 @@ public class ConnectPage : ContentPage
 
             case TvConnectionState.Connecting:
                 _statusLabel.Text = "Стан: Підключення до ADB...";
-                _statusLabel.TextColor = Colors.Blue;
+                _statusLabel.TextColor = Color.FromArgb("#60a5fa");
                 _connectBtn.IsEnabled = false;
                 _disconnectBtn.IsEnabled = false;
                 _retryBtn.IsVisible = false;
@@ -291,7 +306,7 @@ public class ConnectPage : ContentPage
 
             case TvConnectionState.Connected:
                 _statusLabel.Text = "Стан: Підключено ✅";
-                _statusLabel.TextColor = Colors.Green;
+                _statusLabel.TextColor = Color.FromArgb("#4ade80");
                 _deviceInfoLabel.Text = $"Пристрій: {session.Manufacturer} {session.DeviceModel} (Android {session.AndroidVersion})";
                 _deviceInfoLabel.IsVisible = true;
                 _connectBtn.IsEnabled = false;
@@ -302,7 +317,7 @@ public class ConnectPage : ContentPage
 
             case TvConnectionState.Error:
                 _statusLabel.Text = "Стан: Помилка підключення ❌";
-                _statusLabel.TextColor = Colors.Red;
+                _statusLabel.TextColor = Color.FromArgb("#f87171");
                 _errorLabel.Text = $"{session.LastError}\nПідказка: якщо ТВ перезавантажувався, перевірте новий порт у Wireless Debugging!";
                 _errorLabel.IsVisible = true;
                 _connectBtn.IsEnabled = true;

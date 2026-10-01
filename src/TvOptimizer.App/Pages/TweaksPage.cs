@@ -25,29 +25,30 @@ public class TweaksPage : ContentPage
 
     public TweaksPage()
     {
-        Title = "Твіки Швидкодії";
+        Title = "Твіки";
+        BackgroundColor = Color.FromArgb("#0f172a");
         Padding = new Thickness(16);
 
         _statusLabel = new Label
         {
             Text = "Твіки оптимізації реактивності інтерфейсу",
             FontAttributes = FontAttributes.Bold,
-            FontSize = 14,
-            TextColor = Colors.SteelBlue
+            FontSize = 13,
+            TextColor = Color.FromArgb("#94a3b8")
         };
 
         _currentScaleLabel = new Label
         {
             Text = "Масштаб анімацій: не визначено",
             FontSize = 13,
-            TextColor = Color.FromArgb("#334155")
+            TextColor = Color.FromArgb("#cbd5e1")
         };
 
         _currentBgLabel = new Label
         {
             Text = "Фонові процеси: не визначено",
             FontSize = 13,
-            TextColor = Color.FromArgb("#334155")
+            TextColor = Color.FromArgb("#cbd5e1")
         };
 
         _refreshBtn = new Button
@@ -55,6 +56,7 @@ public class TweaksPage : ContentPage
             Text = "🔄 Зчитати поточний стан",
             BackgroundColor = Color.FromArgb("#2563eb"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _refreshBtn.Clicked += async (s, e) => await ReadCurrentStateAsync();
@@ -71,36 +73,40 @@ public class TweaksPage : ContentPage
 
         _animFastBtn = new Button
         {
-            Text = "Швидкі анімації (0.5x)",
+            Text = "0.5x",
             BackgroundColor = Color.FromArgb("#0284c7"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _animFastBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Fast05);
 
         _animOffBtn = new Button
         {
-            Text = "Вимкнути анімації (0.0x)",
+            Text = "0.0x (Вимк)",
             BackgroundColor = Color.FromArgb("#475569"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _animOffBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Off);
 
         _animStockBtn = new Button
         {
-            Text = "Стандартні анімації (1.0x)",
-            BackgroundColor = Color.FromArgb("#64748b"),
+            Text = "1.0x (Стандарт)",
+            BackgroundColor = Color.FromArgb("#334155"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _animStockBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Stock1x);
 
         _dozeBtn = new Button
         {
-            Text = "Увімкнути Doze (економія в простої)",
+            Text = "Економія Doze",
             BackgroundColor = Color.FromArgb("#0d9488"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _dozeBtn.Clicked += async (s, e) => await ApplyCommandAsync(TweaksEngine.DozeOn());
@@ -110,89 +116,76 @@ public class TweaksPage : ContentPage
             Text = "Вимкнути скрінсейвер",
             BackgroundColor = Color.FromArgb("#d97706"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _screensaverBtn.Clicked += async (s, e) => await ApplyCommandAsync(TweaksEngine.ScreensaverOff());
 
-        var statusCard = new Border
+        var statusCard = CreateCard(new VerticalStackLayout
         {
-            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
-            Stroke = Color.FromArgb("#cbd5e1"),
-            Padding = new Thickness(14),
-            BackgroundColor = Color.FromArgb("#f1f5f9"),
-            Content = new VerticalStackLayout
-            {
-                Spacing = 6,
-                Children = { _statusLabel, _currentScaleLabel, _currentBgLabel, _refreshBtn }
-            }
-        };
+            Spacing = 6,
+            Children = { _statusLabel, _currentScaleLabel, _currentBgLabel, _refreshBtn }
+        });
 
-        var quickCard = new Border
+        var quickCard = CreateCard(new VerticalStackLayout
         {
-            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
-            Stroke = Color.FromArgb("#cbd5e1"),
-            Padding = new Thickness(14),
-            BackgroundColor = Color.FromArgb("#ffffff"),
-            Content = new VerticalStackLayout
+            Spacing = 8,
+            Children =
             {
-                Spacing = 8,
-                Children =
+                new Label { Text = "Швидка оптимізація", FontAttributes = FontAttributes.Bold, FontSize = 15, TextColor = Color.FromArgb("#f8fafc") },
+                _applyGuestPresetBtn
+            }
+        });
+
+        var animCard = CreateCard(new VerticalStackLayout
+        {
+            Spacing = 8,
+            Children =
+            {
+                new Label { Text = "Швидкість анімацій інтерфейсу", FontAttributes = FontAttributes.Bold, FontSize = 15, TextColor = Color.FromArgb("#f8fafc") },
+                new HorizontalStackLayout
                 {
-                    new Label { Text = "Швидка оптимізація", FontAttributes = FontAttributes.Bold, FontSize = 15 },
-                    _applyGuestPresetBtn
+                    Spacing = 8,
+                    Children = { _animFastBtn, _animOffBtn, _animStockBtn }
                 }
             }
-        };
+        });
 
-        var animCard = new Border
+        var extraCard = CreateCard(new VerticalStackLayout
         {
-            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
-            Stroke = Color.FromArgb("#cbd5e1"),
-            Padding = new Thickness(14),
-            BackgroundColor = Color.FromArgb("#ffffff"),
-            Content = new VerticalStackLayout
+            Spacing = 8,
+            Children =
             {
-                Spacing = 8,
-                Children =
+                new Label { Text = "Системні налаштування", FontAttributes = FontAttributes.Bold, FontSize = 15, TextColor = Color.FromArgb("#f8fafc") },
+                new HorizontalStackLayout
                 {
-                    new Label { Text = "Швидкість анімацій інтерфейсу", FontAttributes = FontAttributes.Bold, FontSize = 15 },
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 8,
-                        Children = { _animFastBtn, _animOffBtn, _animStockBtn }
-                    }
+                    Spacing = 8,
+                    Children = { _dozeBtn, _screensaverBtn }
                 }
             }
-        };
-
-        var extraCard = new Border
-        {
-            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
-            Stroke = Color.FromArgb("#cbd5e1"),
-            Padding = new Thickness(14),
-            BackgroundColor = Color.FromArgb("#ffffff"),
-            Content = new VerticalStackLayout
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new Label { Text = "Додаткові системні налаштування", FontAttributes = FontAttributes.Bold, FontSize = 15 },
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 8,
-                        Children = { _dozeBtn, _screensaverBtn }
-                    }
-                }
-            }
-        };
+        });
 
         Content = new ScrollView
         {
+            BackgroundColor = Color.FromArgb("#0f172a"),
             Content = new VerticalStackLayout
             {
                 Spacing = 12,
                 Children = { statusCard, quickCard, animCard, extraCard }
             }
+        };
+    }
+
+    private static Border CreateCard(View inner)
+    {
+        return new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(10) },
+            Stroke = Color.FromArgb("#334155"),
+            StrokeThickness = 1,
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            Padding = new Thickness(14),
+            Content = inner
         };
     }
 
@@ -210,12 +203,12 @@ public class TweaksPage : ContentPage
         if (!TvSession.Current.IsConnected)
         {
             _statusLabel.Text = "Не підключено до ТВ";
-            _statusLabel.TextColor = Colors.Red;
+            _statusLabel.TextColor = Color.FromArgb("#f87171");
             return;
         }
 
         _statusLabel.Text = "⏳ Зчитування параметрів...";
-        _statusLabel.TextColor = Colors.DarkOrange;
+        _statusLabel.TextColor = Color.FromArgb("#fbbf24");
 
         try
         {
@@ -228,12 +221,12 @@ public class TweaksPage : ContentPage
             _currentBgLabel.Text = $"Ліміт фонових процесів: {(string.IsNullOrWhiteSpace(bgProc) || bgProc == "null" ? "за замовчуванням" : bgProc)}";
 
             _statusLabel.Text = "✅ Параметри успішно зчитано";
-            _statusLabel.TextColor = Color.FromArgb("#15803d");
+            _statusLabel.TextColor = Color.FromArgb("#4ade80");
         }
         catch (Exception ex)
         {
             _statusLabel.Text = $"Помилка: {ex.Message}";
-            _statusLabel.TextColor = Colors.Red;
+            _statusLabel.TextColor = Color.FromArgb("#f87171");
         }
     }
 

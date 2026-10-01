@@ -1,3 +1,5 @@
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
 using TvOptimizer.App.Pages;
 
 namespace TvOptimizer.App;
@@ -6,25 +8,48 @@ public class App : Application
 {
     public App()
     {
-        var shell = new Shell
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        var tabbedPage = new TabbedPage
         {
-            FlyoutBehavior = FlyoutBehavior.Disabled,
+            Title = "Android TV Optimizer",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            SelectedTabColor = Color.FromArgb("#38bdf8"),
+            UnselectedTabColor = Color.FromArgb("#64748b"),
+            BackgroundColor = Color.FromArgb("#0f172a")
         };
-        shell.Items.Add(new ShellContent
+
+        var connectNav = new NavigationPage(new ConnectPage())
         {
-            Title = "TV",
-            ContentTemplate = new DataTemplate(typeof(ConnectPage)),
-        });
-        shell.Items.Add(new ShellContent
+            Title = "🔌 Підключення",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#0f172a")
+        };
+
+        var auditNav = new NavigationPage(new AuditPage())
         {
-            Title = "Audit",
-            ContentTemplate = new DataTemplate(typeof(AuditPage)),
-        });
-        shell.Items.Add(new ShellContent
+            Title = "🛡️ Аудит",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#0f172a")
+        };
+
+        var tweaksNav = new NavigationPage(new TweaksPage())
         {
-            Title = "Tweaks",
-            ContentTemplate = new DataTemplate(typeof(TweaksPage)),
-        });
-        MainPage = shell;
+            Title = "⚡ Твіки",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#0f172a")
+        };
+
+        tabbedPage.Children.Add(connectNav);
+        tabbedPage.Children.Add(auditNav);
+        tabbedPage.Children.Add(tweaksNav);
+
+        return new Window(tabbedPage);
     }
 }

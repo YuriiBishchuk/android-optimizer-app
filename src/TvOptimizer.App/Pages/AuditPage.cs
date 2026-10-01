@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
 using TvOptimizer.Core.Audit;
 using TvOptimizer.Core.Safety;
@@ -21,15 +22,16 @@ public class AuditPage : ContentPage
 
     public AuditPage()
     {
-        Title = "Аудит & Очищення";
+        Title = "Аудит";
+        BackgroundColor = Color.FromArgb("#0f172a");
         Padding = new Thickness(16);
 
         _statusLabel = new Label
         {
             Text = "Підключіться до ТВ для аналізу пакетів",
             FontAttributes = FontAttributes.Bold,
-            FontSize = 14,
-            TextColor = Colors.SteelBlue
+            FontSize = 13,
+            TextColor = Color.FromArgb("#94a3b8")
         };
 
         _refreshBtn = new Button
@@ -37,15 +39,17 @@ public class AuditPage : ContentPage
             Text = "🔄 Просканувати",
             BackgroundColor = Color.FromArgb("#2563eb"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8
         };
         _refreshBtn.Clicked += async (s, e) => await RefreshAuditAsync();
 
         _applySafeBtn = new Button
         {
-            Text = "🛡️ Застосувати TIER_1 (Safe Bloat)",
+            Text = "🛡️ Застосувати TIER_1",
             BackgroundColor = Color.FromArgb("#16a34a"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
             IsEnabled = false
         };
@@ -53,9 +57,10 @@ public class AuditPage : ContentPage
 
         _rollbackBtn = new Button
         {
-            Text = "↩️ Відкат вимкнених",
+            Text = "↩️ Відкат",
             BackgroundColor = Color.FromArgb("#d97706"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
             IsEnabled = false
         };
@@ -64,20 +69,37 @@ public class AuditPage : ContentPage
         _resultsView = new CollectionView
         {
             SelectionMode = SelectionMode.None,
-            ItemTemplate = new DataTemplate(typeof(AuditResultCell))
+            ItemTemplate = new DataTemplate(typeof(AuditResultCell)),
+            BackgroundColor = Colors.Transparent
         };
 
-        var actionsRow = new HorizontalStackLayout
+        var statusCard = new Border
         {
-            Spacing = 8,
-            Children = { _refreshBtn, _applySafeBtn, _rollbackBtn }
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(10) },
+            Stroke = Color.FromArgb("#334155"),
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            Padding = new Thickness(14),
+            Content = new VerticalStackLayout
+            {
+                Spacing = 10,
+                Children =
+                {
+                    _statusLabel,
+                    new HorizontalStackLayout
+                    {
+                        Spacing = 8,
+                        Children = { _refreshBtn, _applySafeBtn, _rollbackBtn }
+                    }
+                }
+            }
         };
 
         var headerLabel = new Label
         {
-            Text = "Список класифікованих пакетів:",
+            Text = "Класифіковані пакети:",
             FontAttributes = FontAttributes.Bold,
-            FontSize = 15
+            FontSize = 15,
+            TextColor = Color.FromArgb("#f8fafc")
         };
 
         var grid = new Grid
@@ -86,16 +108,15 @@ public class AuditPage : ContentPage
             {
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Auto },
-                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Star }
             },
-            RowSpacing = 12
+            RowSpacing = 12,
+            BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        grid.Add(_statusLabel, 0, 0);
-        grid.Add(actionsRow, 0, 1);
-        grid.Add(headerLabel, 0, 2);
-        grid.Add(_resultsView, 0, 3);
+        grid.Add(statusCard, 0, 0);
+        grid.Add(headerLabel, 0, 1);
+        grid.Add(_resultsView, 0, 2);
 
         Content = grid;
     }
@@ -118,7 +139,7 @@ public class AuditPage : ContentPage
         }
 
         _statusLabel.Text = "⏳ Сканування пакетів та аналіз правил безпеки...";
-        _statusLabel.TextColor = Colors.DarkOrange;
+        _statusLabel.TextColor = Color.FromArgb("#fbbf24");
         _refreshBtn.IsEnabled = false;
         _applySafeBtn.IsEnabled = false;
 
@@ -146,14 +167,14 @@ public class AuditPage : ContentPage
             var protCount = results.Count(r => r.Tier == Tier.Protected);
 
             _statusLabel.Text = $"Всього: {results.Count} | Safe Bloat (TIER_1): {safeCount} | Опційні (TIER_2): {reviewCount} | Захищені: {protCount}";
-            _statusLabel.TextColor = Color.FromArgb("#15803d");
+            _statusLabel.TextColor = Color.FromArgb("#4ade80");
             _applySafeBtn.IsEnabled = safeCount > 0;
             _rollbackBtn.IsEnabled = _disabledHistory.Count > 0;
         }
         catch (Exception ex)
         {
             _statusLabel.Text = $"Помилка сканування: {ex.Message}";
-            _statusLabel.TextColor = Colors.Red;
+            _statusLabel.TextColor = Color.FromArgb("#f87171");
             await DisplayAlert("Помилка аудиту", ex.Message, "OK");
         }
         finally
@@ -191,7 +212,7 @@ public class AuditPage : ContentPage
 
         _applySafeBtn.IsEnabled = false;
         _statusLabel.Text = "⏳ Вимикання безпечних блоатваре-пакетів...";
-        _statusLabel.TextColor = Colors.DarkOrange;
+        _statusLabel.TextColor = Color.FromArgb("#fbbf24");
 
         int successCount = 0;
         foreach (var item in safeList)
@@ -210,7 +231,7 @@ public class AuditPage : ContentPage
         }
 
         _statusLabel.Text = $"✅ Успішно вимкнено {successCount} пакетів";
-        _statusLabel.TextColor = Color.FromArgb("#15803d");
+        _statusLabel.TextColor = Color.FromArgb("#4ade80");
         _rollbackBtn.IsEnabled = _disabledHistory.Count > 0;
         await DisplayAlert("Готово", $"Оптимізація завершена. Вимкнено пакетів: {successCount}. Відкат доступний у будь-який момент.", "OK");
         await RefreshAuditAsync();
@@ -246,7 +267,7 @@ public class AuditPage : ContentPage
         }
 
         _statusLabel.Text = $"✅ Відновлено пакетів: {restored}";
-        _statusLabel.TextColor = Color.FromArgb("#15803d");
+        _statusLabel.TextColor = Color.FromArgb("#4ade80");
         await DisplayAlert("Відкат завершено", $"Відновлено {restored} пакетів.", "OK");
         await RefreshAuditAsync();
     }
