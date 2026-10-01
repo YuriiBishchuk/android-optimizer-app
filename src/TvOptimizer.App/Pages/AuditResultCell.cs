@@ -1,43 +1,54 @@
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
+using Microsoft.Maui.Graphics;
 using TvOptimizer.Core.Audit;
 
 namespace TvOptimizer.App.Pages;
 
-public class AuditResultCell : ViewCell
+public class AuditResultCell : Border
 {
     public AuditResultCell()
     {
-        var nameLabel = new Label
+        StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) };
+        Stroke = Color.FromArgb("#e2e8f0");
+        StrokeThickness = 1;
+        Padding = new Thickness(12, 8);
+        Margin = new Thickness(0, 4);
+        BackgroundColor = Color.FromArgb("#f8fafc");
+
+        var pkgLabel = new Label
         {
             FontAttributes = FontAttributes.Bold,
-            FontSize = 16
-        };
-        nameLabel.SetBinding(Label.TextProperty, "PackageName");
-
-        var tierLabel = new Label
-        {
-            FontSize = 14
-        };
-        tierLabel.SetBinding(Label.TextProperty, new Binding("Tier", stringFormat: "TIER_{0}"));
-
-        var detailsLabel = new Label
-        {
-            FontSize = 13,
-            TextColor = Colors.Gray,
+            FontSize = 14,
+            TextColor = Color.FromArgb("#0f172a"),
             LineBreakMode = LineBreakMode.TailTruncation
         };
-        detailsLabel.SetBinding(Label.TextProperty, "Details");
+        pkgLabel.SetBinding(Label.TextProperty, "PackageName");
 
-        var actionIcon = new Image
+        var badgeLabel = new Label
         {
-            WidthRequest = 24,
-            HeightRequest = 24,
-            Source = "warning.png"
+            FontSize = 11,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = Colors.White,
+            Padding = new Thickness(6, 2)
         };
-        actionIcon.SetBinding(Image.IsVisibleProperty, "NeedsAction");
 
-        var layout = new Grid
+        var badgeBorder = new Border
         {
-            Padding = new Thickness(10, 5),
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(4) },
+            Content = badgeLabel,
+            HorizontalOptions = LayoutOptions.End
+        };
+
+        var modeLabel = new Label
+        {
+            FontSize = 12,
+            TextColor = Color.FromArgb("#64748b")
+        };
+        modeLabel.SetBinding(Label.TextProperty, "Details");
+
+        var grid = new Grid
+        {
             RowDefinitions =
             {
                 new RowDefinition { Height = GridLength.Auto },
@@ -45,18 +56,41 @@ public class AuditResultCell : ViewCell
             },
             ColumnDefinitions =
             {
-                new ColumnDefinition { Width = new GridLength(0.6, GridUnitType.Star) },
-                new ColumnDefinition { Width = new GridLength(0.3, GridUnitType.Star) },
+                new ColumnDefinition { Width = GridLength.Star },
                 new ColumnDefinition { Width = GridLength.Auto }
-            }
+            },
+            RowSpacing = 4
         };
 
-        layout.Add(nameLabel, 0, 0);
-        layout.Add(tierLabel, 1, 0);
-        layout.Add(detailsLabel, 0, 1);
-        Grid.SetColumnSpan(detailsLabel, 2);
-        layout.Add(actionIcon, 2, 0);
+        grid.Add(pkgLabel, 0, 0);
+        grid.Add(badgeBorder, 1, 0);
+        grid.Add(modeLabel, 0, 1);
+        Grid.SetColumnSpan(modeLabel, 2);
 
-        View = layout;
+        Content = grid;
+
+        BindingContextChanged += (s, e) =>
+        {
+            if (BindingContext is AuditResult res)
+            {
+                badgeLabel.Text = res.Tier switch
+                {
+                    Tier.Safe => "TIER_1 SAFE",
+                    Tier.Review => "TIER_2 REVIEW",
+                    Tier.Heuristic => "HEURISTIC",
+                    Tier.Protected => "PROTECTED",
+                    _ => "UNIDENTIFIED"
+                };
+
+                badgeBorder.BackgroundColor = res.Tier switch
+                {
+                    Tier.Safe => Color.FromArgb("#16a34a"),
+                    Tier.Review => Color.FromArgb("#2563eb"),
+                    Tier.Heuristic => Color.FromArgb("#d97706"),
+                    Tier.Protected => Color.FromArgb("#dc2626"),
+                    _ => Color.FromArgb("#64748b")
+                };
+            }
+        };
     }
 }

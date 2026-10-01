@@ -61,13 +61,24 @@ public static class Guard
 
     public const string DefaultStockLauncher = "com.google.android.apps.tv.launcherx";
 
+    public static bool IsProtected(string pkg, IReadOnlySet<string>? deviceProtected = null, string? stockLauncher = null)
+    {
+        if (NeverTouch.Contains(pkg)) return true;
+        if (UniversalProtected.Contains(pkg)) return true;
+        if (deviceProtected != null && deviceProtected.Contains(pkg)) return true;
+        if (stockLauncher != null && pkg == stockLauncher) return true;
+        if (pkg == DefaultStockLauncher) return true;
+        return false;
+    }
+
     public static bool CanRemove(string pkg, IReadOnlySet<string> deviceProtected, string stockLauncher)
     {
-        if (NeverTouch.Contains(pkg)) return false;
-        if (UniversalProtected.Contains(pkg)) return false;
-        if (deviceProtected.Contains(pkg)) return false;
-        if (pkg == stockLauncher) return false;
-        return true;
+        return !IsProtected(pkg, deviceProtected, stockLauncher);
+    }
+
+    public static bool CanRemove(string pkg)
+    {
+        return !IsProtected(pkg, UniversalProtected, DefaultStockLauncher);
     }
 
     public static (List<string> Allowed, List<string> Blocked) FilterBatch(

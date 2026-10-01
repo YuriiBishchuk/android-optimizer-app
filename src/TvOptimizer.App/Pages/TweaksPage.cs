@@ -1,150 +1,314 @@
-using TvOptimizer.App.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
-using Microsoft.Maui.Essentials;
+using Microsoft.Maui.Controls.Shapes;
+using Microsoft.Maui.Graphics;
+using TvOptimizer.App.Services;
+using TvOptimizer.Core.Tweaks;
 
 namespace TvOptimizer.App.Pages;
 
 public class TweaksPage : ContentPage
 {
     private readonly Label _statusLabel;
+    private readonly Label _currentScaleLabel;
+    private readonly Label _currentBgLabel;
     private readonly Button _refreshBtn;
-    private readonly ListView _tweaksList;
-    private readonly Button _applySelectedBtn;
-
-    private readonly List<TweakItem> _items = new();
+    private readonly Button _applyGuestPresetBtn;
+    private readonly Button _animFastBtn;
+    private readonly Button _animOffBtn;
+    private readonly Button _animStockBtn;
+    private readonly Button _dozeBtn;
+    private readonly Button _screensaverBtn;
 
     public TweaksPage()
     {
-        Title = "Tweaks";
-        Padding = new Thickness(10);
+        Title = "Твіки Швидкодії";
+        Padding = new Thickness(16);
 
         _statusLabel = new Label
         {
-            Text = "Готовий",
+            Text = "Твіки оптимізації реактивності інтерфейсу",
             FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.Blue
+            FontSize = 14,
+            TextColor = Colors.SteelBlue
         };
+
+        _currentScaleLabel = new Label
+        {
+            Text = "Масштаб анімацій: не визначено",
+            FontSize = 13,
+            TextColor = Color.FromArgb("#334155")
+        };
+
+        _currentBgLabel = new Label
+        {
+            Text = "Фонові процеси: не визначено",
+            FontSize = 13,
+            TextColor = Color.FromArgb("#334155")
+        };
+
         _refreshBtn = new Button
         {
-            Text = "Перевірити стан",
-            BackgroundColor = Colors.Blue,
-            TextColor = Colors.White
-        };
-        _refreshBtn.Clicked += async (s, e) => await LoadTweaksAsync();
-        _applySelectedBtn = new Button
-        {
-            Text = "Застосувати вибране",
-            BackgroundColor = Colors.Green,
+            Text = "🔄 Зчитати поточний стан",
+            BackgroundColor = Color.FromArgb("#2563eb"),
             TextColor = Colors.White,
-            IsEnabled = false
+            CornerRadius = 8
         };
-        _applySelectedBtn.Clicked += async (s, e) => await ApplySelectedAsync();
+        _refreshBtn.Clicked += async (s, e) => await ReadCurrentStateAsync();
 
-        _tweaksList = new ListView
+        _applyGuestPresetBtn = new Button
         {
-            HasUnevenRows = true,
-            SelectionMode = ListViewSelectionMode.Single
+            Text = "⚡ Пресет «Швидкий ТВ» (0.5x + Doze + Bg 4)",
+            BackgroundColor = Color.FromArgb("#16a34a"),
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 8
         };
-        _tweaksList.ItemTemplate = new DataTemplate(typeof(TweakCell));
+        _applyGuestPresetBtn.Clicked += async (s, e) => await ApplyGuestPresetAsync();
 
-        Content = new StackLayout
+        _animFastBtn = new Button
         {
-            Spacing = 10,
-            Children =
+            Text = "Швидкі анімації (0.5x)",
+            BackgroundColor = Color.FromArgb("#0284c7"),
+            TextColor = Colors.White,
+            CornerRadius = 8
+        };
+        _animFastBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Fast05);
+
+        _animOffBtn = new Button
+        {
+            Text = "Вимкнути анімації (0.0x)",
+            BackgroundColor = Color.FromArgb("#475569"),
+            TextColor = Colors.White,
+            CornerRadius = 8
+        };
+        _animOffBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Off);
+
+        _animStockBtn = new Button
+        {
+            Text = "Стандартні анімації (1.0x)",
+            BackgroundColor = Color.FromArgb("#64748b"),
+            TextColor = Colors.White,
+            CornerRadius = 8
+        };
+        _animStockBtn.Clicked += async (s, e) => await ApplyAnimationAsync(AnimSpeed.Stock1x);
+
+        _dozeBtn = new Button
+        {
+            Text = "Увімкнути Doze (економія в простої)",
+            BackgroundColor = Color.FromArgb("#0d9488"),
+            TextColor = Colors.White,
+            CornerRadius = 8
+        };
+        _dozeBtn.Clicked += async (s, e) => await ApplyCommandAsync(TweaksEngine.DozeOn());
+
+        _screensaverBtn = new Button
+        {
+            Text = "Вимкнути скрінсейвер",
+            BackgroundColor = Color.FromArgb("#d97706"),
+            TextColor = Colors.White,
+            CornerRadius = 8
+        };
+        _screensaverBtn.Clicked += async (s, e) => await ApplyCommandAsync(TweaksEngine.ScreensaverOff());
+
+        var statusCard = new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
+            Stroke = Color.FromArgb("#cbd5e1"),
+            Padding = new Thickness(14),
+            BackgroundColor = Color.FromArgb("#f1f5f9"),
+            Content = new VerticalStackLayout
             {
-                new Label { Text = "Доступні tweaks:", FontAttributes = FontAttributes.Bold },
-                _statusLabel,
-                _refreshBtn,
-                _tweaksList,
-                _applySelectedBtn
+                Spacing = 6,
+                Children = { _statusLabel, _currentScaleLabel, _currentBgLabel, _refreshBtn }
+            }
+        };
+
+        var quickCard = new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
+            Stroke = Color.FromArgb("#cbd5e1"),
+            Padding = new Thickness(14),
+            BackgroundColor = Color.FromArgb("#ffffff"),
+            Content = new VerticalStackLayout
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new Label { Text = "Швидка оптимізація", FontAttributes = FontAttributes.Bold, FontSize = 15 },
+                    _applyGuestPresetBtn
+                }
+            }
+        };
+
+        var animCard = new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
+            Stroke = Color.FromArgb("#cbd5e1"),
+            Padding = new Thickness(14),
+            BackgroundColor = Color.FromArgb("#ffffff"),
+            Content = new VerticalStackLayout
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new Label { Text = "Швидкість анімацій інтерфейсу", FontAttributes = FontAttributes.Bold, FontSize = 15 },
+                    new HorizontalStackLayout
+                    {
+                        Spacing = 8,
+                        Children = { _animFastBtn, _animOffBtn, _animStockBtn }
+                    }
+                }
+            }
+        };
+
+        var extraCard = new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
+            Stroke = Color.FromArgb("#cbd5e1"),
+            Padding = new Thickness(14),
+            BackgroundColor = Color.FromArgb("#ffffff"),
+            Content = new VerticalStackLayout
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new Label { Text = "Додаткові системні налаштування", FontAttributes = FontAttributes.Bold, FontSize = 15 },
+                    new HorizontalStackLayout
+                    {
+                        Spacing = 8,
+                        Children = { _dozeBtn, _screensaverBtn }
+                    }
+                }
+            }
+        };
+
+        Content = new ScrollView
+        {
+            Content = new VerticalStackLayout
+            {
+                Spacing = 12,
+                Children = { statusCard, quickCard, animCard, extraCard }
             }
         };
     }
 
     protected override async void OnAppearing()
     {
-        await LoadTweaksAsync();
+        base.OnAppearing();
+        if (TvSession.Current.IsConnected)
+        {
+            await ReadCurrentStateAsync();
+        }
     }
 
-    private async Task LoadTweaksAsync()
+    private async Task ReadCurrentStateAsync()
     {
-        _statusLabel.Text = "Перевірка...";
-        _refreshBtn.IsEnabled = false;
+        if (!TvSession.Current.IsConnected)
+        {
+            _statusLabel.Text = "Не підключено до ТВ";
+            _statusLabel.TextColor = Colors.Red;
+            return;
+        }
+
+        _statusLabel.Text = "⏳ Зчитування параметрів...";
+        _statusLabel.TextColor = Colors.DarkOrange;
+
         try
         {
-            if (!TvSession.Current.IsConnected)
-            {
-                _statusLabel.Text = "Не підключено";
-                return;
-            }
-            var anim = await TvSession.Current.ShellAsync("settings list global | grep -E 'animation|animator'");
-            _items.Clear();
-            _items.Add(new TweakItem
-            {
-                Name = "Animation scale",
-                Category = "Animation",
-                CurrentValue = anim,
-                TargetValue = "0.5"
-            });
-            _items.Add(new TweakItem
-            {
-                Name = "Doze disabled",
-                Category = "Doze",
-                CurrentValue = "checking",
-                TargetValue = "disabled"
-            });
-            _tweaksList.SelectedItem = null;
-            _tweaksList.ItemsSource = _items;
-            _statusLabel.Text = "Знайдено " + _items.Count;
+            var winScale = (await TvSession.Current.ShellAsync("settings get global window_animation_scale")).Trim();
+            var transScale = (await TvSession.Current.ShellAsync("settings get global transition_animation_scale")).Trim();
+            var animScale = (await TvSession.Current.ShellAsync("settings get global animator_duration_scale")).Trim();
+            var bgProc = (await TvSession.Current.ShellAsync("settings get global activity_manager_max_proc")).Trim();
+
+            _currentScaleLabel.Text = $"Масштаб анімацій: Window={winScale}, Transition={transScale}, Animator={animScale}";
+            _currentBgLabel.Text = $"Ліміт фонових процесів: {(string.IsNullOrWhiteSpace(bgProc) || bgProc == "null" ? "за замовчуванням" : bgProc)}";
+
+            _statusLabel.Text = "✅ Параметри успішно зчитано";
+            _statusLabel.TextColor = Color.FromArgb("#15803d");
         }
         catch (Exception ex)
         {
-            _statusLabel.Text = "Помилка: " + ex.Message;
-        }
-        finally
-        {
-            _refreshBtn.IsEnabled = true;
+            _statusLabel.Text = $"Помилка: {ex.Message}";
+            _statusLabel.TextColor = Colors.Red;
         }
     }
 
-    private async Task ApplySelectedAsync()
+    private async Task ApplyGuestPresetAsync()
     {
-        var selected = _tweaksList.SelectedItem as TweakItem;
-        if (selected == null) return;
-        if (!await DisplayAlert("Підтвердити", "Застосувати вибране?", "Так", "Ні")) return;
-        _applySelectedBtn.IsEnabled = false;
+        if (!TvSession.Current.IsConnected)
+        {
+            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            return;
+        }
+
+        bool confirm = await DisplayAlert(
+            "Пресет «Швидкий ТВ»",
+            "Застосувати оптимальні налаштування для Android TV (анімації 0.5x, оптимізація фону, увімкнення Doze)?",
+            "Застосувати", "Скасувати");
+
+        if (!confirm) return;
+
         try
         {
-            await TvSession.Current.ShellAsync(selected.GetCommand());
+            foreach (var cmd in TweaksEngine.GuestPreset())
+            {
+                await TvSession.Current.ShellAsync(cmd.Command);
+            }
+
+            await DisplayAlert("Успіх", "Пресет швидкодії застосовано!", "OK");
+            await ReadCurrentStateAsync();
         }
-        catch { }
-        _applySelectedBtn.IsEnabled = true;
+        catch (Exception ex)
+        {
+            await DisplayAlert("Помилка", ex.Message, "OK");
+        }
     }
-}
 
-public class TweakItem
-{
-    public string Name { get; set; } = "";
-    public string Category { get; set; } = "";
-    public string CurrentValue { get; set; } = "";
-    public string TargetValue { get; set; } = "";
-    public string Description { get; set; } = "";
-    public string GetCommand() => Category switch
+    private async Task ApplyAnimationAsync(AnimSpeed speed)
     {
-        "Animation" => "settings put global " + Name.Replace(" ", "_").ToLower() + " " + TargetValue,
-        _ => ""
-    };
-}
+        if (!TvSession.Current.IsConnected)
+        {
+            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            return;
+        }
 
-public class TweakCell : ViewCell
-{
-    public TweakCell()
+        try
+        {
+            foreach (var cmd in TweaksEngine.Animation(speed))
+            {
+                await TvSession.Current.ShellAsync(cmd.Command);
+            }
+
+            await DisplayAlert("Успіх", $"Встановлено анімації: {speed}", "OK");
+            await ReadCurrentStateAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Помилка", ex.Message, "OK");
+        }
+    }
+
+    private async Task ApplyCommandAsync(TweakCmd cmd)
     {
-        var grid = new Grid { Padding = new Thickness(10) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        grid.Add(new Label { Text = "{Binding Name}", FontAttributes = FontAttributes.Bold }, 0, 0);
-        grid.Add(new Label { Text = "{Binding CurrentValue}", TextColor = Colors.Orange }, 0, 1);
-        View = grid;
+        if (!TvSession.Current.IsConnected)
+        {
+            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            return;
+        }
+
+        try
+        {
+            await TvSession.Current.ShellAsync(cmd.Command);
+            await DisplayAlert("Успіх", $"Виконано: {cmd.Label}", "OK");
+            await ReadCurrentStateAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Помилка", ex.Message, "OK");
+        }
     }
 }

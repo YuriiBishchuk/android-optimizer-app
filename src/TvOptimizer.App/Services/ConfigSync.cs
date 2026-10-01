@@ -67,9 +67,9 @@ public sealed class ConfigSync
     }
 
     /// <summary>Force immediate refresh, ignoring cache.</summary>
-    public async Task RefreshAsync(CancellationToken ct = default)
+    public async Task<bool> RefreshAsync(CancellationToken ct = default)
     {
-        await SyncAsync(ct).ConfigureAwait(false);
+        return await SyncAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>

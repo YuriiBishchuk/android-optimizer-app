@@ -15,7 +15,7 @@
     <JavaSdkDirectory>/opt/data/profiles/developer/home/jdk/jdk-17.0.12+7</JavaSdkDirectory>
     <AndroidSdkDirectory>/opt/android-sdk</AndroidSdkDirectory>
     <AndroidKeyStore>True</AndroidKeyStore>
-    <AndroidSigningKeyStore>$(AndroidSdkDirectory)/system/debug.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyStore>/opt/data/.android/debug.keystore</AndroidSigningKeyStore>
     <AndroidSigningKeyAlias>androiddebugkey</AndroidSigningKeyAlias>
     <AndroidSigningKeyPass>android</AndroidSigningKeyPass>
     <AndroidSigningStorePass>android</AndroidSigningStorePass>

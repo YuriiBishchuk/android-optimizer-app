@@ -1,98 +1,112 @@
-# 📺 Android TV Optimizer — Phone App
+# 📺 Android TV Optimizer — Phone App (.NET 10 MAUI)
 
 Керуй будь-яким Android TV / Google TV **прямо з телефона** по Wi-Fi (Wireless Debugging, Android 11+).
 Без root, без ПК. Прийшов до будь-кого → підключив → аудит → почистив → прискорив анімації → поставив Projectivy HOME.
 
-> Конфіги моделей + community-списки живуть в сусідньому репозиторії
-> [`android-tv-optimizer`](https://github.com/) і підтягуються свіжими по HTTP.
-> Цей APK — тільки тонкий клієнт: `Скачати конфіг → fingerprint ТВ → audit → tweaks → apply`.
+> Конфіги моделей та community-списки підтягуються з репозиторію [`YuriiBishchuk/android-tv-optimizer`](https://github.com/YuriiBishchuk/android-tv-optimizer) з автоматичним офлайн-кешуванням на 7 днів.
 
-![Platform](https://img.shields.io/badge/Platform-Android_8%2B-green)
+![Platform](https://img.shields.io/badge/Platform-Android_8%2B%20(MAUI)-green)
+![.NET](https://img.shields.io/badge/.NET-10.0-blue)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 
-## Фічі (MVP)
+---
 
-1. **Connect** — Wireless Debugging pairing (код + порт пейрингу → ADB-порт), mDNS-підказка, збереження останнього ТВ.
-2. **Audit** — порт `scripts/audit.sh`: 🟢 SAFE-TO-CLEAN / 🟡 REVIEW (curated community) / 🔍 HEURISTIC / 🔴 PROTECTED / ❓ UNIDENTIFIED. Read-only за замовчуванням.
-3. **Debloat apply** — тільки TIER_1 кнопка + backup-список + Rollback (`install-existing`). UNIDENTIFIED ніколи не має кнопки «видалити все».
-4. **Tweaks** (нове!): швидкість анімацій, фонові процеси, doze, screensaver, HDR/роздільна здатність інфо — все через безпечні `settings put global/system` + `pm`. Жодних `disable` на відео-стек.
-5. **Set HOME** — Projectivy як HOME (`cmd role` + preferred, емуляція ручного чойзера) + перевірка `verify`.
-6. **Offline cache** — конфіги кешуються на 7 днів, працює без інтернету в гостях.
+## 🏛️ Архітектура Проєкту
 
-## ADB-ядро
-
-- **Kadb** (`com.flyfishxu:kadb`, Apache-2.0) — `Kadb.create(host,port)` + `Kadb.pair(host,pairPort,code)`, shell/push/pull/install/uninstall. Жодних російських залежностей.
-- Fallback: `libadb-android` (MuntashirAkon, GPL/Apache) — згадано в `docs/APP_SPEC.md`, за замовчуванням не тягнемо щоб не роздувати APK.
-
-## Структура
+Проєкт побудований на сучасному стеку .NET 10 MAUI з модульною чистою архітектурою:
 
 ```
 android-tv-optimizer-app/
-├── app/src/main/java/com/optimizer/tv/
-│   ├── MainActivity.kt
-│   ├── adb/AdbGateway.kt        # обгортка над Kadb
-│   ├── config/ConfigRepo.kt     # GitHub raw + кеш + парсер .conf/.txt
-│   ├── audit/AuditEngine.kt     # порт audit.sh
-│   ├── tweaks/TweaksEngine.kt   # анімації/процеси/doze/інфо
-│   ├── safety/Guard.kt          # NEVER_TOUCH + PROTECTED фільтр
-│   └── ui/{Connect,Audit,Tweaks,Apply}Screen.kt
-├── docs/{APP_SPEC,TWEAKS}.md
-└── gradle/libs.versions.toml
+├── src/
+│   ├── TvOptimizer.Core/          # Чистий C# (Domain Logic, AuditEngine, Guard, ConfigSync, TweaksEngine)
+│   ├── TvOptimizer.Transport/     # Pure C# ADB Transport (TLS 1.3/RSA pairing, TCP socket, shell stream)
+│   └── TvOptimizer.App/           # .NET 10 MAUI кросплатформний мобільний додаток (Android)
+├── tests/
+│   ├── TvOptimizer.Core.Tests/    # Unit-тести безпеки (Safety Guard, ConfigParser, Rules)
+│   └── TvOptimizer.Transport.Tests/# Тести ADB протоколу та mock-сокета
+├── scripts/
+│   ├── emulator-ctl.sh            # Управління headless QEMU/KVM емуляторами (Phone / TV)
+│   ├── test-emulator-low.sh       # Повний цикл e2e-тестування на low-resource AVD
+│   └── release-debug-apk.sh       # Автоматизована збірка та підпис релізного APK
+└── artifacts/                     # Згенеровані підписані версії APK
 ```
 
-## Збірка
+---
+
+## 🛡️ Модель Безпеки (Safety Guard & Invariants)
+
+1. **Суворий захист системних лаунчерів (NeverTouch & UniversalProtected):**
+   - `com.google.android.apps.tv.launcherx`
+   - `com.google.android.tvlauncher`
+   - `com.google.android.leanbacklauncher`
+   - `com.android.systemui`, `com.google.android.gms`, `com.android.vending`
+   - Системний лаунчер **НІКОЛИ НЕ ВИМИКАЄТЬСЯ**, що унеможливлює стан «чорного екрану».
+
+2. **5 Рівнів Класифікації (Tiers):**
+   - 🟢 **TIER_1 (Universal Safe Bloat):** Рекламні трекери, аналітика, невикористовувані промо-сервіси (feedback, adservices, printspooler тощо). Дозволено пакетне вимкнення.
+   - 🔵 **TIER_2 (Curated Device Bloat):** Вузли конкретних моделей (Xiaomi, Philips, TCL, Chromecast), узгоджені спільнотою.
+   - 🟡 **TIER_3 (Heuristics):** Підозрілі пакети з ознаками телеметрії. Тільки ручне поштучне підтвердження.
+   - ⚪ **TIER_4 (Unidentified):** Користувацькі додатки та нейтральні системні бібліотеки.
+   - 🔴 **TIER_5 (Protected / NeverTouch):** Системні компоненти та лаунчери. Захищені від вимкнення апаратно на рівні Guard.
+
+3. **Гарантія Відкату (Rollback):**
+   - Усі дії фіксуються в історії сесії та можуть бути миттєво скасовані однією кнопкою через `pm enable <package>`.
+
+---
+
+## 📱 Покроковий Процес Підключення (Pairing Walkthrough)
+
+### Для Android 11+ (Wireless Debugging):
+1. Відкрийте на ТВ: `Налаштування` → `Параметри пристрою` → `Для розробників` → `Бездротове налагодження` (Увімкнути).
+2. Натисніть `Підключити пристрій за допомогою коду підключення`.
+3. На ТВ відобразиться:
+   - **IP-адреса та порт створення пари** (наприклад, `192.168.0.45:37891`)
+   - **6-значний код підключення** (наприклад, `123456`)
+4. У додатку **Android TV Optimizer**:
+   - Введіть IP, Pairing Port та Код підключення → натисніть **«Створити пару»**.
+   - Після успішного створення пари введіть основний порт налагодження та натисніть **«Підключитися»**.
+
+### Специфіка для Xiaomi TV A Pro 42 (2026):
+- Порт бездротового налагодження змінюється після кожного перезавантаження ТВ — в додатку реалізовано швидке перепідключення з автозбереженням останньої IP-адреси.
+- Лаунчер Xiaomi PatchWall (`com.mitv.tvhome.atv`) класифікується як TIER_2 (рекомендується замінювати на Projectivy Launcher).
+
+---
+
+## ⚡ Твіки Швидкодії (Performance Tweaks)
+
+Додаток включає безпечний тюнінг через системні налаштування Android:
+- **Пресет «Швидкий ТВ»:** анімації 0.5x, ліміт фонових процесів ≤ 4, увімкнення Doze для зниження енергоспоживання у простої.
+- **Миттєве зчитування та застосування:** `window_animation_scale`, `transition_animation_scale`, `animator_duration_scale`.
+
+---
+
+## 🚀 Збірка та Реліз
 
 ```bash
-# Потрібні JDK 17 + Android SDK 34
-./gradlew assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
+# Збірка підписаного APK
+bash scripts/release-debug-apk.sh
+
+# Згенерований APK потрапляє в каталог artifacts/:
+# artifacts/TvOptimizer-v0.1.0-<TIMESTAMP>-Signed.apk
 ```
 
-Без Android SDK — дивись `docs/APP_SPEC.md` (логіка повністю описана, можна рев'ювити без збірки).
+---
 
-## Безпека (як в основному репо)
-
-1. Ніколи не `disable` fallback-HOME (`launcherx` лишається enabled).
-2. Не чіпати відео-стек (`mitv.service`, `livetv`, `videoplayer`, `setup`).
-3. `apply` тільки на TIER_1; REVIEW/UNIDENTIFIED — поштучно з підтвердженням.
-4. Перед кожним apply — backup-список для `pm install-existing --user 0 <pkg>`.
-
-## Ліцензія
-
-[MIT](LICENSE)
-
-## 🧪 Тестування на low‑ресурсному Android‑емуляторі
-
-Для швидкого розробки та CI можна запустити тести на minimal‑resource AVD.
-
-### Підготовка
-
-1. Встановити Android SDK (emulator, platform‑tools, cmdline‑tools).  
-2. Встановити .NET 10 SDK + `maui-android` workload.  
-3. Завантажити system image, наприклад:  
-
-   ```bash
-   $ANDROID_SDK/cmdline-tools/latest/bin/sdkmanager "system-images;android-30;google_apis;x86_64"
-   ```
-
-### Скрипт
+## 🧪 Запуск Тестів
 
 ```bash
+# Запуск Unit-тестів Core & Transport
+dotnet test tests/TvOptimizer.Core.Tests/TvOptimizer.Core.Tests.csproj
+dotnet test src/TvOptimizer.Transport.Tests/TvOptimizer.Transport.Tests.csproj
+
+# Запуск e2e-тестів на емуляторі
 bash scripts/test-emulator-low.sh
 ```
 
-Скрипт створює AVD з 256–1024 MB RAM, GPU вимкнено (SwiftShader), аудіо вимкнено та запускає `dotnet build … && dotnet android run …` на цьому образі.
+---
 
-### Що робить скрипт
+## 📄 Ліцензія та Подяки
 
-- Створює (або перезабUIDES) AVD `lowres_test` на основі Google API Android 30.  
-- Налаштовує `hw.ramSize=1024`, `hw.gpu.enabled=no`, `hw.audioInput=no`, `hw.camera.back=none`, `hw.camera.front=none`.  
-- Запускаєemu‑безвікнічний режим (`-no-window`) щоб економити CPU/GPU.  
-- Чекає, доки ADB розезнає пристрій (до 3 хв).  
-- Збирає MAUI‑проєкт у режимі Release і деплоїть наemuлятор.  
-- Після завершення зупиняєemuлятор.
-
-### Використання у CI
-
-Додати stage у GitHub Actions, який викликає `bash scripts/test-emulator-low.sh` після `dotnet build`.  
-Це дозволяє перевіряти злиття PR без вимagalної облачної інфраструктури.
+- Ліцензія: [MIT](LICENSE).
+- Джерело конфігурацій та правил оптимізації: [YuriiBishchuk/android-tv-optimizer](https://github.com/YuriiBishchuk/android-tv-optimizer).
+- Подяка спільноті за списки перевірених bloatware-пакетів для Android TV.
