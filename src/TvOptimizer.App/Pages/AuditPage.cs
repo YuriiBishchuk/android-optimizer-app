@@ -134,7 +134,7 @@ public class AuditPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ на вкладці Підключення", "OK");
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою на вкладці Підключення", "OK");
             return;
         }
 

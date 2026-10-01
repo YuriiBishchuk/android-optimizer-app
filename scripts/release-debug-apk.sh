@@ -7,19 +7,19 @@ ARTIFACTS_DIR="$REPO_ROOT/artifacts"
 
 mkdir -p "$ARTIFACTS_DIR"
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-TARGET_APK="$ARTIFACTS_DIR/TvOptimizer-v${VERSION}-${TIMESTAMP}-Signed.apk"
+TARGET_APK="$ARTIFACTS_DIR/AndroidOptimizer-v${VERSION}-${TIMESTAMP}-Signed.apk"
 
-echo "==> Building TvOptimizer.App (.NET 10 MAUI Android Release APK)..."
+echo "==> Building Android Optimizer (.NET 10 MAUI Android Release APK)..."
 cd "$REPO_ROOT"
 dotnet build -f net10.0-android -c Release src/TvOptimizer.App/TvOptimizer.App.csproj
 
-SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Release/net10.0-android/com.optimizer.tv-Signed.apk"
+SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Release/net10.0-android/com.optimizer.android-Signed.apk"
 
 if [[ ! -f "$SOURCE_APK" ]]; then
     # Fallback if Release signed is at Debug or direct output
-    SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Debug/net10.0-android/com.optimizer.tv-Signed.apk"
+    SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Debug/net10.0-android/com.optimizer.android-Signed.apk"
 fi
 
 if [[ ! -f "$SOURCE_APK" ]]; then

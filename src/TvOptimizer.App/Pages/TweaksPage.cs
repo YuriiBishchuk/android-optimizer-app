@@ -63,7 +63,7 @@ public class TweaksPage : ContentPage
 
         _applyGuestPresetBtn = new Button
         {
-            Text = "⚡ Пресет «Швидкий ТВ» (0.5x + Doze + Bg 4)",
+            Text = "⚡ Пресет «Швидкий пристрій» (0.5x + Doze + Bg 4)",
             BackgroundColor = Color.FromArgb("#16a34a"),
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,

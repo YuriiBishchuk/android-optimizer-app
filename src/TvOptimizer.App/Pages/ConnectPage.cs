@@ -33,9 +33,9 @@ public class ConnectPage : ContentPage
         Title = "Підключення";
         BackgroundColor = Color.FromArgb("#0f172a");
 
-        _hostEntry = CreateStyledEntry("IP адреса ТВ (напр. 192.168.0.50)", Preferences.Default.Get("last_tv_host", "192.168.0."));
+        _hostEntry = CreateStyledEntry("IP адреса пристрою (напр. 192.168.0.50)", Preferences.Default.Get("last_tv_host", "192.168.0."));
         _portEntry = CreateStyledEntry("Порт підключення (напр. 5555 або 37123)", Preferences.Default.Get("last_tv_port", "5555"));
-        _pairingPortEntry = CreateStyledEntry("Порт створення пари (з ТВ)", "");
+        _pairingPortEntry = CreateStyledEntry("Порт створення пари (з екрана пристрою)", "");
         _pairingCodeEntry = CreateStyledEntry("6-значний код підключення", "", maxLength: 6);
 
         _tlsSwitch = new Switch { IsToggled = false, OnColor = Color.FromArgb("#38bdf8"), ThumbColor = Colors.White };
@@ -182,7 +182,7 @@ public class ConnectPage : ContentPage
             Spacing = 10,
             Children =
             {
-                new Label { Text = "IP-адреса Android TV:", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
+                new Label { Text = "IP-адреса Android пристрою:", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
                 _hostEntry,
                 new Label { Text = "Основний порт ADB (Connection Port):", TextColor = Color.FromArgb("#cbd5e1"), FontSize = 13 },
                 _portEntry,
@@ -219,7 +219,7 @@ public class ConnectPage : ContentPage
             {
                 new Label
                 {
-                    Text = "📺 Android TV Optimizer",
+                    Text = "🤖 Android Optimizer",
                     FontSize = 20,
                     FontAttributes = FontAttributes.Bold,
                     TextColor = Color.FromArgb("#38bdf8"),
@@ -289,7 +289,7 @@ public class ConnectPage : ContentPage
                 break;
 
             case TvConnectionState.Pairing:
-                _statusLabel.Text = "Стан: Створення пари з ТВ...";
+                _statusLabel.Text = "Стан: Створення пари з пристроєм...";
                 _statusLabel.TextColor = Color.FromArgb("#c084fc");
                 _connectBtn.IsEnabled = false;
                 _disconnectBtn.IsEnabled = false;
@@ -318,7 +318,7 @@ public class ConnectPage : ContentPage
             case TvConnectionState.Error:
                 _statusLabel.Text = "Стан: Помилка підключення ❌";
                 _statusLabel.TextColor = Color.FromArgb("#f87171");
-                _errorLabel.Text = $"{session.LastError}\nПідказка: якщо ТВ перезавантажувався, перевірте новий порт у Wireless Debugging!";
+                _errorLabel.Text = $"{session.LastError}\nПідказка: якщо пристрій перезавантажувався, перевірте новий порт у Wireless Debugging!";
                 _errorLabel.IsVisible = true;
                 _connectBtn.IsEnabled = true;
                 _disconnectBtn.IsEnabled = false;
@@ -339,7 +339,7 @@ public class ConnectPage : ContentPage
         var host = _hostEntry.Text?.Trim();
         if (string.IsNullOrWhiteSpace(host))
         {
-            await DisplayAlert("Помилка", "Введіть IP адресу ТВ", "OK");
+            await DisplayAlert("Помилка", "Введіть IP адресу пристрою", "OK");
             return;
         }
 
@@ -375,7 +375,7 @@ public class ConnectPage : ContentPage
         var host = _hostEntry.Text?.Trim();
         if (string.IsNullOrWhiteSpace(host))
         {
-            await DisplayAlert("Помилка", "Введіть IP адресу ТВ", "OK");
+            await DisplayAlert("Помилка", "Введіть IP адресу пристрою", "OK");
             return;
         }
 
@@ -398,7 +398,7 @@ public class ConnectPage : ContentPage
         catch (Exception ex)
         {
             UpdateUiState();
-            await DisplayAlert("Помилка підключення", $"{ex.Message}\n\nПеревірте IP адресу, порт та чи активне бездротове налагодження на ТВ.", "OK");
+            await DisplayAlert("Помилка підключення", $"{ex.Message}\n\nПеревірте IP адресу, порт та чи активне бездротове налагодження на пристрої.", "OK");
         }
     }
 
@@ -406,7 +406,7 @@ public class ConnectPage : ContentPage
     {
         await TvSession.Current.DisconnectAsync();
         UpdateUiState();
-        await DisplayAlert("Інфо", "Відключено від ТВ", "OK");
+        await DisplayAlert("Інфо", "Відключено від пристрою", "OK");
     }
 
     private async Task OnRefreshClicked()

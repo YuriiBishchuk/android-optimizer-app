@@ -1,9 +1,10 @@
-# 📺 Android TV Optimizer — Phone App (.NET 10 MAUI)
+# 🤖 Android Optimizer — Phone & Tablet App (.NET 10 MAUI)
+[![GitHub](https://img.shields.io/badge/GitHub-YuriiBishchuk%2Fandroid--optimizer--app-blue)](https://github.com/YuriiBishchuk/android-optimizer-app)
 
-Керуй будь-яким Android TV / Google TV **прямо з телефона** по Wi-Fi (Wireless Debugging, Android 11+).
-Без root, без ПК. Прийшов до будь-кого → підключив → аудит → почистив → прискорив анімації → поставив Projectivy HOME.
+Керуй та оптимізуй будь-який Android пристрій (**TV, телефони, планшети, автомагнітоли, ТВ-бокси, IoT**) **прямо з телефона** по Wi-Fi (Wireless Debugging, Android 11+) або USB.
+100% Без root, без ПК. Підключив → аудит → безпечний debloat → прискорив анімації → очистив кеш → заблокував витік заряду у фоні → захистив приватність.
 
-> Конфіги моделей та community-списки підтягуються з репозиторію [`YuriiBishchuk/android-tv-optimizer`](https://github.com/YuriiBishchuk/android-tv-optimizer) з автоматичним офлайн-кешуванням на 7 днів.
+> Підтримка бази знань Universal Debloater Alliance (`uad_lists.json`) та перевірених community-списків з офлайн-кешуванням на 7 днів.
 
 ![Platform](https://img.shields.io/badge/Platform-Android_8%2B%20(MAUI)-green)
 ![.NET](https://img.shields.io/badge/.NET-10.0-blue)
@@ -16,7 +17,7 @@
 Проєкт побудований на сучасному стеку .NET 10 MAUI з модульною чистою архітектурою:
 
 ```
-android-tv-optimizer-app/
+android-optimizer-app/
 ├── src/
 │   ├── TvOptimizer.Core/          # Чистий C# (Domain Logic, AuditEngine, Guard, ConfigSync, TweaksEngine)
 │   ├── TvOptimizer.Transport/     # Pure C# ADB Transport (TLS 1.3/RSA pairing, TCP socket, shell stream)
