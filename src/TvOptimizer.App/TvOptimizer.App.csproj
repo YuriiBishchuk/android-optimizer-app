@@ -23,7 +23,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Maui Images -->
+    <!-- Maui App Icon & Images -->
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0f172a" />
     <MauiImage Include="Resources\Images\*" />
     <MauiSplash Include="Resources\Splash\*" />
   </ItemGroup>
