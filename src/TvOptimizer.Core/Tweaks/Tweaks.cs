@@ -57,4 +57,41 @@ public static class TweaksEngine
     /// <summary>Набір "Прийшов у гості": анімації 0.5 + фон 4 + doze. Все відкотне.</summary>
     public static IReadOnlyList<TweakCmd> GuestPreset() =>
         Animation(AnimSpeed.Fast05).Append(BackgroundLimit(4)).Append(DozeOn()).ToList();
+
+    /// <summary>Private DNS: налаштування хостнейму.</summary>
+    public static TweakCmd PrivateDns(string hostname) => hostname == "off"
+        ? new("settings put global private_dns_mode off", "settings put global private_dns_mode opportunistic", "Private DNS: Off")
+        : new($"settings put global private_dns_mode hostname && settings put global private_dns_specifier {hostname}",
+              "settings put global private_dns_mode opportunistic",
+              $"Private DNS: {hostname}");
+
+    /// <summary>Роздільна здатність: wm size.</summary>
+    public static TweakCmd Resolution(int width, int height) => new(
+        $"wm size {width}x{height}",
+        "wm size reset",
+        $"Роздільна здатність: {width}x{height}");
+
+    /// <summary>Щільність: wm density.</summary>
+    public static TweakCmd Density(int dpi) => new(
+        $"wm density {dpi}",
+        "wm density reset",
+        $"Щільність: {dpi} DPI");
+
+    /// <summary>Частота оновлення: peak_refresh_rate.</summary>
+    public static TweakCmd RefreshRate(float rate) => new(
+        $"settings put system peak_refresh_rate {rate:F1}",
+        "settings delete system peak_refresh_rate",
+        $"Частота оновлення: {rate:F1} Hz");
+
+    /// <summary>Тайм-аут екрану.</summary>
+    public static TweakCmd ScreenTimeout(int ms) => new(
+        $"settings put system screen_off_timeout {ms}",
+        "settings put system screen_off_timeout 60000",
+        $"Тайм-аут екрану: {ms} мс");
+
+    /// <summary>Не вимикати екран при живленні.</summary>
+    public static TweakCmd StayAwake(bool enable) => new(
+        $"settings put global stay_on_while_plugged_in {(enable ? 3 : 0)}",
+        "settings put global stay_on_while_plugged_in 0",
+        $"Не вимикати екран при живленні: {(enable ? "Так" : "Ні")}");
 }
