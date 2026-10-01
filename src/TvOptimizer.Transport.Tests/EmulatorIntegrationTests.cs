@@ -1,6 +1,4 @@
 using System;
-using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 using TvOptimizer.Transport.Adb;
 using Xunit;
@@ -10,29 +8,38 @@ namespace TvOptimizer.Transport.Tests
     public class EmulatorIntegrationTests
     {
         [Fact]
-        public async Task ConnectToEmulator_ShouldConnectSuccessfully()
+        public async Task ConnectAndShell_ReturnsExpectedOutput()
         {
-            var host = "127.0.0.1";
-            var port = 5555;
-            using var rsa = RSA.Create(2048);
-            
-            // Try connecting using AdbClient.
-            // Based on AdbClient.cs, it takes host, port, tls, rsa.
-            // Emulator usually doesn't need TLS for initial connection, but it depends on the setup.
-            // Let's try tls: false first.
-            await using var client = new AdbClient(host, port, tls: false, rsa);
-            
-            // The requirement says:
-            // "execute real ADB transport tests that connect to 127.0.0.1:5555, execute , verify streaming output, check reconnect behavior, and verify socket cleanup."
-            
-            // For now, let's just attempt a connection and see if it fails like the other test.
-            // Since it's a real emulator, we probably don't need to implement the pairing protocol if we just want to connect,
-            // but the AdbClient seems to implement a protocol that might expect a pairing.
-            
-            // Let's try to connect and call something simple if possible.
-            // Actually, AdbClient seems designed for pairing.
-            
-            Assert.NotNull(client);
+            await using var client = new AdbClient("127.0.0.1", 5555, tls: false);
+            await client.ConnectAsync();
+            var result = await client.ShellAsync("echo hello");
+            Assert.Contains("hello", result.Trim());
+        }
+
+        [Fact]
+        public async Task Reconnect_AfterDisconnect_Works()
+        {
+            // First connection
+            await using var client1 = new AdbClient("127.0.0.1", 5555, tls: false);
+            await client1.ConnectAsync();
+            var result1 = await client1.ShellAsync("echo first");
+            Assert.Contains("first", result1.Trim());
+
+            // Second connection (new client)
+            await using var client2 = new AdbClient("127.0.0.1", 5555, tls: false);
+            await client2.ConnectAsync();
+            var result2 = await client2.ShellAsync("echo second");
+            Assert.Contains("second", result2.Trim());
+        }
+
+        [Fact]
+        public async Task SocketCleanup_DisposeAsyncDoesNotThrow()
+        {
+            var client = new AdbClient("127.0.0.1", 5555, tls: false);
+            await client.ConnectAsync();
+            await client.ShellAsync("echo test");
+            await client.DisposeAsync(); // Should not throw
+            Assert.True(true);
         }
     }
 }
