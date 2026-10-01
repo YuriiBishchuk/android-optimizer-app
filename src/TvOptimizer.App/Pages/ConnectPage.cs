@@ -1,5 +1,3 @@
-using CommunityToolkit.Maui.Alerts;
-using CommunityToolkit.Maui.Core;
 using TvOptimizer.App.Services;
 
 namespace TvOptimizer.App.Pages;
@@ -50,7 +48,7 @@ public class ConnectPage : ContentPage
             BackgroundColor = Colors.Green,
             TextColor = Colors.White
         };
-        _connectBtn.Clicked += async (s, e) => await OnConnectClicked();
+        _connectBtn.Clicked += (s, e) => OnConnectClicked();
 
         _disconnectBtn = new Button
         {
@@ -59,90 +57,60 @@ public class ConnectPage : ContentPage
             TextColor = Colors.White,
             IsEnabled = false
         };
-        _disconnectBtn.Clicked += async (s, e) => await OnDisconnectClicked();
+        _disconnectBtn.Clicked += (s, e) => OnDisconnectClicked();
 
         var layout = new StackLayout
         {
             Spacing = 15,
             Children =
             {
-                new Label { Text = "Підключення до Android TV через ADB", FontSize = 18, HorizontalOptions = LayoutOptions.Center },
-                new BoxView { HeightRequest = 1, Color = Colors.LightGray, HorizontalOptions = LayoutOptions.FillAndExpand },
+                new Label { Text = "Підключення до Android TV через ADB", FontSize = 18 },
                 _statusLabel,
-                new Frame { Padding = 15, Content = new StackLayout
-                {
-                    Spacing = 10,
-                    Children =
-                    {
-                        new Label { Text = "Хост:", FontAttributes = FontAttributes.Bold },
-                        _hostEntry,
-                        new Label { Text = "Порт:", FontAttributes = FontAttributes.Bold },
-                        _portEntry,
-                        new Label { Text = "TLS/SSL:", FontAttributes = FontAttributes.Bold },
-                        _tlsSwitch
-                    }
-                }},
-                new StackLayout
-                {
-                    Orientation = StackOrientation.Horizontal,
-                    Spacing = 10,
-                    HorizontalOptions = LayoutOptions.Center,
-                    Children = { _connectBtn, _disconnectBtn }
-                }
+                _hostEntry,
+                _portEntry,
+                _tlsSwitch,
+                _connectBtn,
+                _disconnectBtn
             }
         };
 
-        Content = new ScrollView { Content = layout };
+        Content = layout;
     }
 
-    protected override async void OnAppearing()
+    private async void OnConnectClicked()
     {
-        base.OnAppearing();
-        UpdateUiState();
-    }
+        _statusLabel.Text = "Підключення...";
+        _statusLabel.TextColor = Colors.Blue;
+        var host = _hostEntry.Text;
+        var port = _portEntry.Text;
 
-    private void UpdateUiState()
-    {
-        var connected = TvSession.Current.IsConnected;
-        _statusLabel.Text = connected ? $"Підключено: {TvSession.Current.DeviceModel}" : "Не підключено";
-        _statusLabel.TextColor = connected ? Colors.Green : Colors.Red;
-        _connectBtn.IsEnabled = !connected;
-        _disconnectBtn.IsEnabled = connected;
-        _hostEntry.IsEnabled = !connected;
-        _portEntry.IsEnabled = !connected;
-        _tlsSwitch.IsEnabled = !connected;
-    }
-
-    private async Task OnConnectClicked()
-    {
-        if (!int.TryParse(_portEntry.Text, out var port) || port < 1 || port > 65535)
-        {
-            await Toast.Make("Неправильний порт").Show();
-            return;
-        }
-
-        _connectBtn.IsEnabled = false;
         try
         {
-            var model = await TvSession.Current.ConnectAsync(
-                _hostEntry.Text.Trim(), port, _tlsSwitch.IsToggled);
-            await Toast.Make($"Підключено до {model}").Show();
+            var service = TvSession.Current;
+            await service.ConnectAsync(host, int.Parse(port), _tlsSwitch.IsToggled);
+            _statusLabel.Text = "Підключено";
+            _statusLabel.TextColor = Colors.Green;
+            _connectBtn.IsEnabled = false;
+            _disconnectBtn.IsEnabled = true;
+            await DisplayAlert("Успіх", "Підключено успішно", "OK");
         }
         catch (Exception ex)
         {
-            await Toast.Make($"Помилка: {ex.Message}").Show();
-        }
-        finally
-        {
-            UpdateUiState();
-            _connectBtn.IsEnabled = true;
+            _statusLabel.Text = "Помилка підключення";
+            _statusLabel.TextColor = Colors.Red;
+            await DisplayAlert("Помилка", $"Помилка: {ex.Message}", "OK");
         }
     }
 
-    private async Task OnDisconnectClicked()
+    private async void OnDisconnectClicked()
     {
+        _statusLabel.Text = "Відключення...";
+        _statusLabel.TextColor = Colors.Blue;
         await TvSession.Current.DisconnectAsync();
-        await Toast.Make("Відключено").Show();
-        UpdateUiState();
+        _statusLabel.Text = "Не підключено";
+        _statusLabel.TextColor = Colors.Red;
+        _connectBtn.IsEnabled = true;
+        _disconnectBtn.IsEnabled = false;
+        await DisplayAlert("Успіх", "Відключено", "OK");
     }
 }

@@ -1,4 +1,7 @@
 using TvOptimizer.Transport.Adb;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TvOptimizer.App.Services;
 
@@ -53,8 +56,19 @@ public sealed class TvSession
         {
             if (_client is not null) await _client.DisposeAsync();
             _client = null;
-            DeviceModel = null;
         }
         finally { _gate.Release(); }
+    }
+
+    // New methods for tweaks
+    public async Task<List<TweakItem>> GetTweaksAsync()
+    {
+        // For now, return an empty list. We can implement real tweak reading later.
+        return new List<TweakItem>();
+    }
+
+    public async Task ExecuteCommandAsync(string command)
+    {
+        await ShellAsync(command);
     }
 }

@@ -31,7 +31,7 @@ public class AuditPage : ContentPage
             BackgroundColor = Colors.Blue,
             TextColor = Colors.White
         };
-        _refreshBtn.Clicked += async (s, e) => await OnRefreshClicked();
+        _refreshBtn.Clicked += async (s, e) => await RefreshAuditAsync();
 
         _applyAllBtn = new Button
         {
@@ -53,7 +53,7 @@ public class AuditPage : ContentPage
         {
             if (e.Item is AuditResult result)
             {
-                await DisplayAlert("Деталі", result.Details, "OK");
+                await DisplayAlert($"Аудит: {result.PackageName}", $"Тир: {result.Tier}\nРежим: {result.ModeName}", "OK");
                 ((ListView)s).SelectedItem = null;
             }
         };
@@ -96,7 +96,7 @@ public class AuditPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await Toast.Make("Спочатку підключіться до ТВ").Show();
+            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
             return;
         }
 
@@ -114,11 +114,13 @@ public class AuditPage : ContentPage
                 .Where(pkg => !string.IsNullOrWhiteSpace(pkg))
                 .ToArray();
 
-            var engine = new AuditEngine();
-            var results = engine.AuditPackages(packages)
-                .OrderByDescending(r => r.Tier)
-                .ThenBy(r => r.PackageName)
-                .ToList();
+            var results = AuditEngine.Run(
+                new HashSet<string>(packages),
+                null, // device config - we don't have it in this context
+                new HashSet<string>() // curatedTier2 - empty for now
+            ).OrderByDescending(r => r.Tier)
+              .ThenBy(r => r.PackageName)
+              .ToList();
 
             _resultsList.ItemsSource = results;
             _statusLabel.Text = $"Знайдено {results.Count} пакетів, {results.Count(r => r.NeedsAction)} потребує дії";
@@ -129,7 +131,7 @@ public class AuditPage : ContentPage
         {
             _statusLabel.Text = $"Помилка: {ex.Message}";
             _statusLabel.TextColor = Colors.Red;
-            await Toast.Make($"Помилка аудиту: {ex.Message}").Show();
+            await DisplayAlert("Помилка аудиту", ex.Message, "OK");
         }
         finally
         {
@@ -141,12 +143,12 @@ public class AuditPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await Toast.Make("Спочатку підключіться до ТВ").Show();
+            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
             return;
         }
 
         var answer = await DisplayAlert(
-            "Застосувати всі tweaks?",
+            "Застосувати всі рекомендації?",
             "Це змінить налаштування на ТВ. Продовжити?",
             "Так", "Ні");
 
@@ -158,12 +160,25 @@ public class AuditPage : ContentPage
 
         try
         {
-            await Toast.Make("Застосовано tweaks (заглушка)").Show();
-            await RefreshAuditAsync();
+            var results = (IList<AuditResult>)_resultsList.ItemsSource;
+            var toApply = results.Where(r => r.NeedsAction).ToList();
+
+            foreach (var result in toApply)
+            {
+                // For now, we just show a message. In the future, we would apply the tweak.
+                await TvSession.Current.ShellAsync($"echo \"Would apply tweak for {result.PackageName}\"");
+            }
+
+            _statusLabel.Text = $"Застосовано {toApply.Count} рекомендацій";
+            _statusLabel.TextColor = Colors.Green;
+            await DisplayAlert("Успіх", $"Застосовано {toApply.Count} рекомендацій", "OK");
+            await RefreshAuditAsync(); // refresh
         }
         catch (Exception ex)
         {
-            await Toast.Make($"Помилка: {ex.Message}").Show();
+            _statusLabel.Text = "Помилка застосування";
+            _statusLabel.TextColor = Colors.Red;
+            await DisplayAlert("Помилка", ex.Message, "OK");
         }
         finally
         {

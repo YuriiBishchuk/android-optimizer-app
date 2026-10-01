@@ -10,7 +10,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder.UseMauiApp<App>();
 #if DEBUG
-        builder.Logging.AddDebug();
+        // builder.Logging.AddDebug(); // Temporarily commented out to fix build
 #endif
         return builder.Build();
     }
