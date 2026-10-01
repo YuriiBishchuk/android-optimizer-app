@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TvOptimizer.Core\TvOptimizer.Core.csproj" />
+    <ProjectReference Include="..\..\src\TvOptimizer.Transport\TvOptimizer.Transport.csproj" />
   </ItemGroup>
 
 </Project>
