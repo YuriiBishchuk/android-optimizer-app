@@ -9,8 +9,10 @@ namespace TvOptimizer.Core.Audit;
 public enum Tier { Safe, Review, Heuristic, Protected, Unidentified }
 
 public sealed record AuditResult(
+    string PackageName,
     bool GenericMode,
     string ModeName,
+    Tier Tier,
     IReadOnlyList<string> SafePresent,
     IReadOnlyList<string> SafeGone,
     IReadOnlyList<string> ReviewPresent,
@@ -18,24 +20,28 @@ public sealed record AuditResult(
     IReadOnlyList<string> ProtectedPresent,
     IReadOnlyList<string> ProtectedMissing,
     IReadOnlyList<string> UnidentifiedShown,
-    int UnidentifiedTotal);
+    int UnidentifiedTotal)
+{
+    public string Details => $"Тир: {Tier}, Режим: {ModeName}";
+    public bool NeedsAction => Tier == Tier.Review || Tier == Tier.Heuristic || Tier == Tier.Protected;
+}
 
 public static class AuditEngine
 {
     private static readonly Regex HeuristicRe = new(
-        @"analytics|telemetry|tracker|[^a-z]acr([^a-z]|$)|adservice|recommend|promo|demo|retail|partnercustomizer|printspooler|nearby\.halfsheet|feedback|federated|personalization",
+        @"analytics|telemetry|tracker|[^a-z]acr([^a-z]|$)|adservice|recommend|promo|demo|retail|partnercustomizer|printspooler|nearby\\.halfsheet|feedback|federated|personalization",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex NoiseRe = new(
-        @"^(android|com\.android|com\.google\.android\.(overlay|ext|module|ondevice|federated|adservices)|mediatek\.factorymenu)\b",
+        @"^(android|com\\.android|com\\.google\\.android\\.(overlay|ext|module|ondevice|federated|adservices)|mediatek\\.factorymenu)\\b",
         RegexOptions.Compiled);
     private static readonly Regex OverlayNoiseRe = new(
-        @"(overlay|rro|resoverlay|auto_generated)\b", RegexOptions.Compiled);
+        @"(overlay|rro|resoverlay|auto_generated)\\b", RegexOptions.Compiled);
 
     /// <param name="installed">Встановлені пакети з `pm list packages`.</param>
     /// <param name="device">Конфіг пристрою або null (generic-режим).</param>
     /// <param name="curatedTier2">Об'єднаний curated TIER_2.</param>
-    public static AuditResult Run(
+    public static List<AuditResult> Run(
         IReadOnlySet<string> installed,
         DeviceConfig? device,
         IReadOnlySet<string> curatedTier2)
@@ -64,33 +70,57 @@ public static class AuditEngine
                 generic ? Guard.DefaultStockLauncher : device!.StockLauncher) && !t1snap.Contains(p))
             .ToHashSet(StringComparer.Ordinal);
 
-        var safePresent = tier1.Where(installed.Contains).OrderBy(x => x).ToList();
-        var safeGone = tier1.Where(p => !installed.Contains(p)).OrderBy(x => x).ToList();
-        var reviewPresent = tier2.Where(installed.Contains).OrderBy(x => x).ToList();
-        var heuristic = installed.Where(p => HeuristicRe.IsMatch(p)).OrderBy(x => x).ToList();
-
-        IReadOnlyList<string> protCheck = generic
-            ? Guard.UniversalProtected.OrderBy(x => x).ToList()
-            : new[] {
-                "mitv.service", "com.mitv.livetv", "com.mitv.setup", "com.mitv.videoplayer",
-                "com.google.android.apps.tv.launcherx",
-                "com.google.android.tungsten.setupwraith",
-                "com.android.systemui", "android" };
-        var protPresent = protCheck.Where(installed.Contains).ToList();
-        var protMissing = protCheck.Where(p => !installed.Contains(p)).ToList();
-
         var known = new HashSet<string>(StringComparer.Ordinal);
-        known.UnionWith(tier1); known.UnionWith(tier2);
-        known.UnionWith(deviceProtected); known.UnionWith(Guard.NeverTouch);
+        known.UnionWith(tier1);
+        known.UnionWith(tier2);
+        known.UnionWith(deviceProtected);
+        known.UnionWith(Guard.NeverTouch);
         known.UnionWith(Guard.UniversalProtected);
-
-        var unid = installed.Where(p => !known.Contains(p)).OrderBy(x => x).ToList();
-        var shown = unid.Where(p => !NoiseRe.IsMatch(p) && !OverlayNoiseRe.IsMatch(p)).ToList();
 
         string modeName = generic
             ? "GENERIC (невідомий ТВ, тільки UNIVERSAL_SAFE + curated)"
             : $"DEVICE ({device!.Name})";
-        return new AuditResult(generic, modeName, safePresent, safeGone, reviewPresent,
-            heuristic, protPresent, protMissing, shown, unid.Count);
+
+        var results = new List<AuditResult>();
+        foreach (var package in installed)
+        {
+            bool isInTier1 = tier1.Contains(package);
+            bool isInTier2 = tier2.Contains(package);
+            bool isInDeviceProtected = deviceProtected.Contains(package);
+            bool isInNeverTouch = Guard.NeverTouch.Contains(package);
+            bool isInUniversalProtected = Guard.UniversalProtected.Contains(package);
+
+            bool isProtected = isInDeviceProtected || isInUniversalProtected;
+            bool isHeuristic = HeuristicRe.IsMatch(package);
+
+            Tier tier;
+            if (isProtected)
+                tier = Tier.Protected;
+            else if (isHeuristic)
+                tier = Tier.Heuristic;
+            else if (isInTier2)
+                tier = Tier.Review;
+            else if (isInTier1)
+                tier = Tier.Safe;
+            else
+                tier = Tier.Unidentified;
+
+            results.Add(new AuditResult(
+                PackageName: package,
+                GenericMode: generic,
+                ModeName: modeName,
+                Tier: tier,
+                SafePresent: new List<string>(),
+                SafeGone: new List<string>(),
+                ReviewPresent: new List<string>(),
+                HeuristicHits: new List<string>(),
+                ProtectedPresent: new List<string>(),
+                ProtectedMissing: new List<string>(),
+                UnidentifiedShown: new List<string>(),
+                UnidentifiedTotal: 0
+            ));
+        }
+
+        return results;
     }
 }

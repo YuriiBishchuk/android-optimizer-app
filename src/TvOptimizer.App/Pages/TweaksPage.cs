@@ -1,4 +1,6 @@
 using TvOptimizer.App.Services;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Essentials;
 
 namespace TvOptimizer.App.Pages;
 
@@ -41,7 +43,7 @@ public class TweaksPage : ContentPage
         _tweaksList = new ListView
         {
             HasUnevenRows = true,
-            SelectionMode = ListViewSelectionMode.Multiple
+            SelectionMode = ListViewSelectionMode.Single
         };
         _tweaksList.ItemTemplate = new DataTemplate(typeof(TweakCell));
 
@@ -92,7 +94,7 @@ public class TweaksPage : ContentPage
                 TargetValue = "disabled"
             });
             _tweaksList.SelectedItem = null;
-            _tweaksList.ItemsView = _items;
+            _tweaksList.ItemsSource = _items;
             _statusLabel.Text = "Знайдено " + _items.Count;
         }
         catch (Exception ex)
@@ -139,8 +141,8 @@ public class TweakCell : ViewCell
     public TweakCell()
     {
         var grid = new Grid { Padding = new Thickness(10) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridUnitType.Star));
-        grid.ColumnDefinitions.Add(new ColumnDefinition(GridUnitType.Star));
+        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         grid.Add(new Label { Text = "{Binding Name}", FontAttributes = FontAttributes.Bold }, 0, 0);
         grid.Add(new Label { Text = "{Binding CurrentValue}", TextColor = Colors.Orange }, 0, 1);
         View = grid;
