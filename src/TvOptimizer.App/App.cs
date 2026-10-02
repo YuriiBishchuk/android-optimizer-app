@@ -46,9 +46,27 @@ public class App : Application
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
+        var remoteNav = new NavigationPage(new RemoteControlPage())
+        {
+            Title = "🎮 Пульт",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#0f172a")
+        };
+
+        var diagNav = new NavigationPage(new DiagnosticsPage())
+        {
+            Title = "📊 Діагностика",
+            BarBackgroundColor = Color.FromArgb("#0f172a"),
+            BarTextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#0f172a")
+        };
+
         tabbedPage.Children.Add(connectNav);
         tabbedPage.Children.Add(auditNav);
         tabbedPage.Children.Add(tweaksNav);
+        tabbedPage.Children.Add(remoteNav);
+        tabbedPage.Children.Add(diagNav);
 
         return new Window(tabbedPage);
     }
