@@ -20,14 +20,15 @@
     <AndroidSigningKeyAlias>androiddebugkey</AndroidSigningKeyAlias>
     <AndroidSigningKeyPass>android</AndroidSigningKeyPass>
     <AndroidSigningStorePass>android</AndroidSigningStorePass>
+    <RuntimeIdentifiers>android-arm64;android-arm;android-x64</RuntimeIdentifiers>
     <RunAOTCompilation>false</RunAOTCompilation>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Maui App Icon & Images -->
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0f172a" />
-    <MauiImage Include="Resources\Images\*" />
-    <MauiSplash Include="Resources\Splash\*" />
+    <MauiIcon Include="Resources/AppIcon/appicon.svg" ForegroundFile="Resources/AppIcon/appiconfg.svg" Color="#0f172a" />
+    <MauiImage Include="Resources/Images/*" />
+    <MauiSplash Include="Resources/Splash/*" />
   </ItemGroup>
 
   <ItemGroup>
