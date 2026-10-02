@@ -512,7 +512,7 @@ public class ConnectPage : ContentPage
                         var ip = $"{subnet}{i}";
                         foreach (var port in portsToScan)
                         {
-                            tasks.Add(Task.Run(async () =>
+                            tasks.Add(Task.Run<(string ip, int port)?>(async () =>
                             {
                                 try
                                 {
@@ -520,7 +520,7 @@ public class ConnectPage : ContentPage
                                     var connectTask = tcp.ConnectAsync(ip, port);
                                     if (await Task.WhenAny(connectTask, Task.Delay(120)) == connectTask && tcp.Connected)
                                     {
-                                        return (string ip, int port)? (ip, port);
+                                        return (ip, port);
                                     }
                                 }
                                 catch { }
