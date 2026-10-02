@@ -15,15 +15,10 @@ echo "==> Building Android Optimizer (.NET 10 MAUI Android Release APK)..."
 cd "$REPO_ROOT"
 dotnet build -f net10.0-android -c Release src/TvOptimizer.App/TvOptimizer.App.csproj
 
-SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Release/net10.0-android/com.optimizer.android-Signed.apk"
+SOURCE_APK=$(find "$REPO_ROOT/src/TvOptimizer.App/bin" -name "*-Signed.apk" | head -n 1)
 
-if [[ ! -f "$SOURCE_APK" ]]; then
-    # Fallback if Release signed is at Debug or direct output
-    SOURCE_APK="$REPO_ROOT/src/TvOptimizer.App/bin/Debug/net10.0-android/com.optimizer.android-Signed.apk"
-fi
-
-if [[ ! -f "$SOURCE_APK" ]]; then
-    echo "ERROR: Could not find generated signed APK at $SOURCE_APK"
+if [[ -z "$SOURCE_APK" || ! -f "$SOURCE_APK" ]]; then
+    echo "ERROR: Could not find generated signed APK in $REPO_ROOT/src/TvOptimizer.App/bin"
     exit 1
 fi
 
