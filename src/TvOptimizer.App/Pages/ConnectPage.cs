@@ -485,7 +485,7 @@ public class ConnectPage : ContentPage
 
         try
         {
-            var found = await Task.Run(async () =>
+            var found = await Task.Run<(string ip, int port)?>(async () =>
             {
                 var baseSubnets = new List<string> { "192.168.0.", "192.168.1.", "100.66.28." };
                 var currentHost = _hostEntry.Text?.Trim() ?? "";
@@ -532,7 +532,7 @@ public class ConnectPage : ContentPage
 
                     var results = await Task.WhenAll(tasks);
                     var match = results.FirstOrDefault(r => r.HasValue);
-                    if (match.HasValue) return match.Value;
+                    if (match.HasValue) return match;
                 }
                 return null;
             });
