@@ -94,4 +94,22 @@ public static class TweaksEngine
         $"settings put global stay_on_while_plugged_in {(enable ? 3 : 0)}",
         "settings put global stay_on_while_plugged_in 0",
         $"Не вимикати екран при живленні: {(enable ? "Так" : "Ні")}");
+
+    /// <summary>Кроки гучності (15, 25, 30, 50).</summary>
+    public static TweakCmd VolumeSteps(int steps) => new(
+        $"setprop ro.config.media_vol_steps {steps}",
+        "setprop ro.config.media_vol_steps 15",
+        $"Кроки гучності: {steps}");
+
+    /// <summary>AppOps: відкликати небезпечний дозвіл для пакету без root.</summary>
+    public static TweakCmd RevokeAppOp(string pkg, string op) => new(
+        $"cmd appops set {pkg} {op} ignore",
+        $"cmd appops set {pkg} {op} allow",
+        $"AppOps: Відкликати {op} для {pkg}");
+
+    /// <summary>AppOps: дозволити доступ для пакету.</summary>
+    public static TweakCmd AllowAppOp(string pkg, string op) => new(
+        $"cmd appops set {pkg} {op} allow",
+        $"cmd appops set {pkg} {op} ignore",
+        $"AppOps: Дозволити {op} для {pkg}");
 }

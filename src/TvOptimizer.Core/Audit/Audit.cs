@@ -22,14 +22,26 @@ public sealed record AuditResult(
     IReadOnlyList<string> UnidentifiedShown,
     int UnidentifiedTotal,
     string? Label = null,
-    string? Description = null)
+    string? Description = null,
+    int TrackerCount = 0)
 {
-    public string Details => $"Тир: {Tier}, Режим: {ModeName}";
+    public string Details => TrackerCount > 0 
+        ? $"Тир: {Tier}, Режим: {ModeName} (Трекери: {TrackerCount})" 
+        : $"Тир: {Tier}, Режим: {ModeName}";
     public bool NeedsAction => Tier == Tier.Review || Tier == Tier.Heuristic || Tier == Tier.Protected;
 }
 
 public static class AuditEngine
 {
+    public static readonly IReadOnlyDictionary<string, string> KnownTrackers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "com.yandex.metrica", "AppMetrica" },
+        { "com.facebook.analytics", "Facebook Analytics" },
+        { "com.appsflyer", "AppsFlyer" },
+        { "com.adjust.sdk", "Adjust" },
+        { "com.crashlytics", "Crashlytics" }
+    };
+
     private static readonly Regex HeuristicRe = new(
         @"analytics|telemetry|tracker|[^a-z]acr([^a-z]|$)|adservice|recommend|promo|demo|retail|partnercustomizer|printspooler|nearby\\.halfsheet|feedback|federated|personalization",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -148,6 +160,15 @@ public static class AuditEngine
                 }
             }
 
+            int trackerCount = 0;
+            foreach (var tracker in KnownTrackers.Keys)
+            {
+                if (package.Contains(tracker, StringComparison.OrdinalIgnoreCase))
+                {
+                    trackerCount++;
+                }
+            }
+
             results.Add(new AuditResult(
                 PackageName: package,
                 GenericMode: generic,
@@ -162,7 +183,8 @@ public static class AuditEngine
                 UnidentifiedShown: new List<string>(),
                 UnidentifiedTotal: 0,
                 Label: label,
-                Description: description
+                Description: description,
+                TrackerCount: trackerCount
             ));
         }
 

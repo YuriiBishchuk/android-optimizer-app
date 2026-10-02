@@ -35,6 +35,16 @@ public class ConfigSyncService
         HttpMessageHandler httpHandler,
         string cacheDir,
         string urlBase,
+        IReadOnlyList<string> knownDevices,
+        IReadOnlyList<string> curatedFiles)
+        : this(httpHandler, cacheDir, urlBase, "https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json", knownDevices, curatedFiles, Array.Empty<string>())
+    {
+    }
+
+    public ConfigSyncService(
+        HttpMessageHandler httpHandler,
+        string cacheDir,
+        string urlBase,
         string uadUrlBase,
         IReadOnlyList<string> knownDevices,
         IReadOnlyList<string> curatedFiles,
@@ -273,10 +283,39 @@ public class ConfigSyncService
         }
     }
 
+    public IReadOnlySet<string> CuratedTier2 => _curatedTier2;
+    public DateTime LastUpdatedUtc => _lastUpdatedUtc;
+    public IReadOnlyDictionary<string, DeviceConfig> DeviceConfigs => _deviceConfigs;
+
+    /// <summary>
+    /// Try to match a device config by fingerprint (model + maker).
+    /// Returns null if no match found (indicating GENERIC_MODE should be used).
+    /// </summary>
+    public DeviceConfig? MatchDevice(string modelProp, string brandProp)
+    {
+        if (string.IsNullOrWhiteSpace(modelProp) || string.IsNullOrWhiteSpace(brandProp))
+            return null;
+
+        modelProp = modelProp.Trim();
+        brandProp = brandProp.Trim();
+
+        foreach (var config in _deviceConfigs.Values)
+        {
+            if (string.Equals(config.Model, modelProp, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(config.Maker, brandProp, StringComparison.OrdinalIgnoreCase))
+            {
+                return config;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Get the parsed UAD app information.
     /// </summary>
     public IReadOnlyDictionary<string, UadAppInfo> GetUadApps() => _uadApps;
+    public IReadOnlyDictionary<string, UadAppInfo> GetCachedUadApps() => _uadApps;
 }
 
 /// <summary>
