@@ -28,7 +28,7 @@ public class AuditPage : ContentPage
 
         _statusLabel = new Label
         {
-            Text = "Підключіться до ТВ для аналізу пакетів",
+            Text = "Підключіться до пристрою для аналізу пакетів",
             FontAttributes = FontAttributes.Bold,
             FontSize = 13,
             TextColor = Color.FromArgb("#94a3b8")
@@ -36,21 +36,23 @@ public class AuditPage : ContentPage
 
         _refreshBtn = new Button
         {
-            Text = "🔄 Просканувати",
+            Text = "🔄 Просканувати пакети",
             BackgroundColor = Color.FromArgb("#2563eb"),
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
-            CornerRadius = 8
+            CornerRadius = 8,
+            HeightRequest = 44
         };
         _refreshBtn.Clicked += async (s, e) => await RefreshAuditAsync();
 
         _applySafeBtn = new Button
         {
-            Text = "🛡️ Застосувати TIER_1",
+            Text = "🛡️ TIER_1 (Безпечно)",
             BackgroundColor = Color.FromArgb("#16a34a"),
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
+            HeightRequest = 44,
             IsEnabled = false
         };
         _applySafeBtn.Clicked += async (s, e) => await OnApplySafeClicked();
@@ -62,6 +64,7 @@ public class AuditPage : ContentPage
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
+            HeightRequest = 44,
             IsEnabled = false
         };
         _rollbackBtn.Clicked += async (s, e) => await OnRollbackClicked();
@@ -72,6 +75,26 @@ public class AuditPage : ContentPage
             ItemTemplate = new DataTemplate(typeof(AuditResultCell)),
             BackgroundColor = Colors.Transparent
         };
+
+        var actionsGrid = new Grid
+        {
+            RowDefinitions =
+            {
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto)
+            },
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            RowSpacing = 8,
+            ColumnSpacing = 8
+        };
+        actionsGrid.Add(_refreshBtn, 0, 0);
+        Grid.SetColumnSpan(_refreshBtn, 2);
+        actionsGrid.Add(_applySafeBtn, 0, 1);
+        actionsGrid.Add(_rollbackBtn, 1, 1);
 
         var statusCard = new Border
         {
@@ -85,11 +108,7 @@ public class AuditPage : ContentPage
                 Children =
                 {
                     _statusLabel,
-                    new HorizontalStackLayout
-                    {
-                        Spacing = 8,
-                        Children = { _refreshBtn, _applySafeBtn, _rollbackBtn }
-                    }
+                    actionsGrid
                 }
             }
         };

@@ -10,135 +10,281 @@ namespace TvOptimizer.App.Pages;
 public class RemoteControlPage : ContentPage
 {
     private readonly Label _statusLabel;
+    private readonly Border _statusBadge;
 
     public RemoteControlPage()
     {
-        Title = "Пульт ДУ";
+        Title = "Пульт";
         BackgroundColor = Color.FromArgb("#0f172a");
-        Padding = new Thickness(16);
 
         _statusLabel = new Label
         {
-            Text = "Готово",
+            Text = "Очікування команд",
             FontSize = 13,
             TextColor = Color.FromArgb("#94a3b8"),
             HorizontalOptions = LayoutOptions.Center
         };
 
-        var grid = new Grid
+        _statusBadge = new Border
         {
-            RowDefinitions = new RowDefinitionCollection
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(12) },
+            Stroke = Color.FromArgb("#334155"),
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            Padding = new Thickness(14, 6),
+            HorizontalOptions = LayoutOptions.Center,
+            Content = _statusLabel
+        };
+
+        // --- 1. D-Pad Controller ---
+        var dpadGrid = new Grid
+        {
+            WidthRequest = 230,
+            HeightRequest = 230,
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center,
+            RowDefinitions =
             {
-                new RowDefinition { Height = GridLength.Auto }, // 0: Status
-                new RowDefinition { Height = GridLength.Auto }, // 1: D-pad up
-                new RowDefinition { Height = GridLength.Auto }, // 2: D-pad middle
-                new RowDefinition { Height = GridLength.Auto }, // 3: D-pad down
-                new RowDefinition { Height = GridLength.Auto }, // 4: Side buttons
-                new RowDefinition { Height = GridLength.Auto }, // 5: Volume
-                new RowDefinition { Height = GridLength.Auto }, // 6: Reboot
-                new RowDefinition { Height = GridLength.Auto }  // 7: Recovery
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
+                new RowDefinition { Height = new GridLength(1.1, GridUnitType.Star) },
+                new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            ColumnDefinitions = new ColumnDefinitionCollection
+            ColumnDefinitions =
             {
-                new ColumnDefinition { Width = GridLength.Auto },
-                new ColumnDefinition { Width = GridLength.Auto },
-                new ColumnDefinition { Width = GridLength.Auto }
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
             }
         };
 
-        // Status label
-        grid.Add(_statusLabel, 0, 0);
-        Grid.SetColumnSpan(_statusLabel, 3);
+        var btnUp = CreateDpadButton("▲", 19, "DPAD_UP");
+        var btnDown = CreateDpadButton("▼", 20, "DPAD_DOWN");
+        var btnLeft = CreateDpadButton("◀", 21, "DPAD_LEFT");
+        var btnRight = CreateDpadButton("▶", 22, "DPAD_RIGHT");
+        var btnCenter = CreateCenterOkButton();
 
-        // D-pad buttons
-        var btnUp = CreateButton("↑", 19, "DPAD_UP");
-        var btnLeft = CreateButton("←", 21, "DPAD_LEFT");
-        var btnCenter = CreateButton("●", 23, "DPAD_CENTER");
-        var btnRight = CreateButton("→", 22, "DPAD_RIGHT");
-        var btnDown = CreateButton("↓", 20, "DPAD_DOWN");
+        dpadGrid.Add(btnUp, 1, 0);
+        dpadGrid.Add(btnLeft, 0, 1);
+        dpadGrid.Add(btnCenter, 1, 1);
+        dpadGrid.Add(btnRight, 2, 1);
+        dpadGrid.Add(btnDown, 1, 2);
 
-        grid.Add(btnUp, 1, 1);        // row1, col1
-        grid.Add(btnLeft, 0, 2);      // row2, col0
-        grid.Add(btnCenter, 1, 2);    // row2, col1
-        grid.Add(btnRight, 2, 2);     // row2, col2
-        grid.Add(btnDown, 1, 3);      // row3, col1
+        var dpadCard = new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(120) },
+            Stroke = Color.FromArgb("#334155"),
+            StrokeThickness = 2,
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            WidthRequest = 250,
+            HeightRequest = 250,
+            HorizontalOptions = LayoutOptions.Center,
+            Padding = 10,
+            Content = dpadGrid
+        };
 
-        // Side buttons: Back, Home, Menu
-        var btnBack = CreateButton("Назад", 4, "BACK");
-        var btnHome = CreateButton("Дом", 3, "HOME");
-        var btnMenu = CreateButton("Меню", 82, "MENU");
+        // --- 2. Navigation Row ---
+        var navGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            ColumnSpacing = 10
+        };
 
-        grid.Add(btnBack, 0, 4);
-        grid.Add(btnHome, 1, 4);
-        grid.Add(btnMenu, 2, 4);
+        navGrid.Add(CreatePillButton("↩ Назад", 4, "BACK", "#334155"), 0, 0);
+        navGrid.Add(CreatePillButton("⌂ Додому", 3, "HOME", "#334155"), 1, 0);
+        navGrid.Add(CreatePillButton("☰ Меню", 82, "MENU", "#334155"), 2, 0);
 
-        // Volume buttons
-        var btnVolUp = CreateButton("Гучність +", 24, "VOLUME_UP");
-        var btnVolDown = CreateButton("Гучність -", 25, "VOLUME_DOWN");
-        var btnMute = CreateButton("Вимк звук", 164, "MUTE");
+        // --- 3. Volume & Media Row ---
+        var volumeGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            ColumnSpacing = 10
+        };
 
-        grid.Add(btnVolUp, 0, 5);
-        grid.Add(btnVolDown, 1, 5);
-        grid.Add(btnMute, 2, 5);
+        volumeGrid.Add(CreatePillButton("🔉 Vol -", 25, "VOLUME_DOWN", "#1e293b", "#64748b"), 0, 0);
+        volumeGrid.Add(CreatePillButton("🔇 Mute", 164, "MUTE", "#1e293b", "#64748b"), 1, 0);
+        volumeGrid.Add(CreatePillButton("🔊 Vol +", 24, "VOLUME_UP", "#1e293b", "#64748b"), 2, 0);
 
-        // System buttons: Reboot, Reboot Recovery (each full width)
-        var btnReboot = CreateButton("Перезавантажити", 0, "REBOOT", isCommand: true);
-        var btnRebootRecovery = CreateButton("Перезавантажити у recovery", 0, "REBOOT_RECOVERY", isCommand: true);
+        // --- 4. System / Reboot Row ---
+        var powerGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            ColumnSpacing = 10
+        };
 
-        grid.Add(btnReboot, 0, 6);
-        Grid.SetColumnSpan(btnReboot, 3);
-        grid.Add(btnRebootRecovery, 0, 7);
-        Grid.SetColumnSpan(btnRebootRecovery, 3);
+        powerGrid.Add(CreatePillButton("🔄 Перезавантажити", 0, "reboot", "#7f1d1d", isCommand: true), 0, 0);
+        powerGrid.Add(CreatePillButton("⚡ В Recovery", 0, "reboot recovery", "#854d0e", isCommand: true), 1, 0);
+
+        var layout = new VerticalStackLayout
+        {
+            Padding = new Thickness(16, 20),
+            Spacing = 20,
+            HorizontalOptions = LayoutOptions.Fill,
+            Children =
+            {
+                new Label
+                {
+                    Text = "🎮 Пульт дистанційного керування",
+                    FontSize = 17,
+                    FontAttributes = FontAttributes.Bold,
+                    TextColor = Color.FromArgb("#f8fafc"),
+                    HorizontalOptions = LayoutOptions.Center
+                },
+                _statusBadge,
+                dpadCard,
+                CreateCardSection("Навігація", navGrid),
+                CreateCardSection("Гучність", volumeGrid),
+                CreateCardSection("Система", powerGrid)
+            }
+        };
 
         Content = new ScrollView
         {
-            Content = grid
+            Content = layout,
+            BackgroundColor = Color.FromArgb("#0f172a")
         };
     }
 
-    private Button CreateButton(string text, int keycode, string label, bool isCommand = false)
+    private static Border CreateCardSection(string title, View content)
     {
-        var button = new Button
+        return new Border
+        {
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(14) },
+            Stroke = Color.FromArgb("#334155"),
+            BackgroundColor = Color.FromArgb("#1e293b"),
+            Padding = new Thickness(14, 12),
+            Content = new VerticalStackLayout
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new Label { Text = title, FontSize = 12, TextColor = Color.FromArgb("#94a3b8"), FontAttributes = FontAttributes.Bold },
+                    content
+                }
+            }
+        };
+    }
+
+    private Button CreateDpadButton(string symbol, int keycode, string label)
+    {
+        var btn = new Button
+        {
+            Text = symbol,
+            FontSize = 20,
+            TextColor = Color.FromArgb("#f8fafc"),
+            BackgroundColor = Color.FromArgb("#334155"),
+            CornerRadius = 16,
+            Padding = 0,
+            WidthRequest = 62,
+            HeightRequest = 62,
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center
+        };
+
+        btn.Clicked += async (s, e) => await SendKey(keycode, label);
+        return btn;
+    }
+
+    private Button CreateCenterOkButton()
+    {
+        var btn = new Button
+        {
+            Text = "OK",
+            FontSize = 16,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = Colors.White,
+            BackgroundColor = Color.FromArgb("#2563eb"),
+            CornerRadius = 35,
+            Padding = 0,
+            WidthRequest = 70,
+            HeightRequest = 70,
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center
+        };
+
+        btn.Clicked += async (s, e) => await SendKey(23, "DPAD_CENTER");
+        return btn;
+    }
+
+    private Button CreatePillButton(string text, int keycode, string label, string bgColor, string? strokeColor = null, bool isCommand = false)
+    {
+        var btn = new Button
         {
             Text = text,
-            FontSize = 16,
-            BackgroundColor = Color.FromArgb("#2563eb"),
+            FontSize = 13,
+            FontAttributes = FontAttributes.Bold,
             TextColor = Colors.White,
-            CornerRadius = 8
+            BackgroundColor = Color.FromArgb(bgColor),
+            CornerRadius = 10,
+            HeightRequest = 46,
+            Padding = new Thickness(4)
         };
 
-        button.Clicked += async (s, e) =>
+        btn.Clicked += async (s, e) =>
         {
-            if (!TvSession.Current.IsConnected)
+            if (isCommand)
             {
-                await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
-                return;
+                await SendShell(label);
             }
-
-            try
+            else
             {
-                if (isCommand)
-                {
-                    // For reboot and reboot recovery, we send a shell command
-                    string command = label; // label is the command string
-                    await TvSession.Current.ShellAsync(command);
-                }
-                else
-                {
-                    // For keyevents
-                    await TvSession.Current.ShellAsync($"input keyevent {keycode}");
-                }
-
-                _statusLabel.Text = $"Виконано: {label}";
-                _statusLabel.TextColor = Color.FromArgb("#4ade80");
-            }
-            catch (Exception ex)
-            {
-                _statusLabel.Text = $"Помилка: {ex.Message}";
-                _statusLabel.TextColor = Color.FromArgb("#f87171");
+                await SendKey(keycode, label);
             }
         };
+        return btn;
+    }
 
-        return button;
+    private async Task SendKey(int keycode, string label)
+    {
+        if (!TvSession.Current.IsConnected)
+        {
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою на вкладці «Підключення»", "OK");
+            return;
+        }
+
+        try
+        {
+            await TvSession.Current.ShellAsync($"input keyevent {keycode}");
+            _statusLabel.Text = $"Натиснуто: {label}";
+            _statusLabel.TextColor = Color.FromArgb("#38bdf8");
+        }
+        catch (Exception ex)
+        {
+            _statusLabel.Text = $"Помилка: {ex.Message}";
+            _statusLabel.TextColor = Color.FromArgb("#f87171");
+        }
+    }
+
+    private async Task SendShell(string command)
+    {
+        if (!TvSession.Current.IsConnected)
+        {
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою на вкладці «Підключення»", "OK");
+            return;
+        }
+
+        try
+        {
+            await TvSession.Current.ShellAsync(command);
+            _statusLabel.Text = $"Виконано: {command}";
+            _statusLabel.TextColor = Color.FromArgb("#4ade80");
+        }
+        catch (Exception ex)
+        {
+            _statusLabel.Text = $"Помилка: {ex.Message}";
+            _statusLabel.TextColor = Color.FromArgb("#f87171");
+        }
     }
 }

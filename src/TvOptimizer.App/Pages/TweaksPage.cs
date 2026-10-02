@@ -202,7 +202,7 @@ public class TweaksPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            _statusLabel.Text = "Не підключено до ТВ";
+            _statusLabel.Text = "Не підключено до пристрою";
             _statusLabel.TextColor = Color.FromArgb("#f87171");
             return;
         }
@@ -234,13 +234,13 @@ public class TweaksPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою", "OK");
             return;
         }
 
         bool confirm = await DisplayAlert(
-            "Пресет «Швидкий ТВ»",
-            "Застосувати оптимальні налаштування для Android TV (анімації 0.5x, оптимізація фону, увімкнення Doze)?",
+            "Пресет швидкодії",
+            "Застосувати оптимальні налаштування для Android (анімації 0.5x, оптимізація фону, увімкнення Doze)?",
             "Застосувати", "Скасувати");
 
         if (!confirm) return;
@@ -265,7 +265,7 @@ public class TweaksPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою", "OK");
             return;
         }
 
@@ -289,7 +289,7 @@ public class TweaksPage : ContentPage
     {
         if (!TvSession.Current.IsConnected)
         {
-            await DisplayAlert("Помилка", "Спочатку підключіться до ТВ", "OK");
+            await DisplayAlert("Помилка", "Спочатку підключіться до пристрою", "OK");
             return;
         }
 

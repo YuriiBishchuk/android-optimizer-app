@@ -20,7 +20,7 @@ public class DiagnosticsService
 
     public async Task<DiagnosticData> GetDiagnosticsAsync(CancellationToken ct = default)
     {
-        if (!_session.IsConnected) throw new InvalidOperationException("Not connected to TV");
+        if (!_session.IsConnected) throw new InvalidOperationException("Не підключено до Android-пристрою");
 
         // CPU/RAM
         var memInfo = await _session.ShellAsync("cat /proc/meminfo", ct: ct);

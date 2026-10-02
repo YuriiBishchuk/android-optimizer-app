@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
@@ -27,6 +30,7 @@ public class ConnectPage : ContentPage
     private readonly Button _disconnectBtn;
     private readonly Button _retryBtn;
     private readonly Button _refreshBtn;
+    private readonly Button _discoverBtn;
 
     public ConnectPage()
     {
@@ -70,7 +74,8 @@ public class ConnectPage : ContentPage
         {
             Text = "Конфіги: Локальний кеш",
             FontSize = 12,
-            TextColor = Color.FromArgb("#64748b")
+            TextColor = Color.FromArgb("#64748b"),
+            VerticalOptions = LayoutOptions.Center
         };
 
         _attributionLabel = new Label
@@ -86,7 +91,8 @@ public class ConnectPage : ContentPage
             BackgroundColor = Color.FromArgb("#9333ea"),
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
-            CornerRadius = 8
+            CornerRadius = 8,
+            HeightRequest = 46
         };
         _pairBtn.Clicked += async (s, e) => await OnPairClicked();
 
@@ -96,7 +102,8 @@ public class ConnectPage : ContentPage
             BackgroundColor = Color.FromArgb("#2563eb"),
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
-            CornerRadius = 8
+            CornerRadius = 8,
+            HeightRequest = 46
         };
         _connectBtn.Clicked += async (s, e) => await OnConnectClicked();
 
@@ -107,6 +114,7 @@ public class ConnectPage : ContentPage
             TextColor = Colors.White,
             FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
+            HeightRequest = 46,
             IsEnabled = false
         };
         _disconnectBtn.Clicked += async (s, e) => await OnDisconnectClicked();
@@ -116,19 +124,32 @@ public class ConnectPage : ContentPage
             Text = "🔄 Спробувати знову",
             BackgroundColor = Color.FromArgb("#d97706"),
             TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
             CornerRadius = 8,
+            HeightRequest = 46,
             IsVisible = false
         };
         _retryBtn.Clicked += async (s, e) => await OnConnectClicked();
 
+        _discoverBtn = new Button
+        {
+            Text = "🔍 Автопошук пристрою у Wi-Fi",
+            BackgroundColor = Color.FromArgb("#0284c7"),
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 8,
+            HeightRequest = 46
+        };
+        _discoverBtn.Clicked += async (s, e) => await OnDiscoverClicked();
+
         _refreshBtn = new Button
         {
-            Text = "🔄 Оновити правила",
+            Text = "🔄 Оновити",
             BackgroundColor = Color.FromArgb("#334155"),
             TextColor = Colors.White,
             FontSize = 12,
             CornerRadius = 6,
-            Padding = new Thickness(8, 4)
+            Padding = new Thickness(12, 6)
         };
         _refreshBtn.Clicked += async (s, e) => await OnRefreshClicked();
 
@@ -157,9 +178,9 @@ public class ConnectPage : ContentPage
             Children =
             {
                 new Label { Text = "📱 Інструкція для Android 11+:", FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#f8fafc"), FontSize = 14 },
-                new Label { Text = "1. На ТВ: Налаштування → Для розробників → Бездротове налагодження (Увімкнути).", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
+                new Label { Text = "1. На пристрої: Налаштування → Для розробників → Бездротове налагодження (Увімкнути).", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
                 new Label { Text = "2. Якщо підключаєтесь вперше: увімкніть «Режим створення пари» нижче.", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
-                new Label { Text = "3. Після успішної пари: введіть основний порт ТВ та натисніть «Підключитися».", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
+                new Label { Text = "3. Після успішної пари: введіть основний порт пристрою та натисніть «Підключитися».", TextColor = Color.FromArgb("#94a3b8"), FontSize = 12 },
             }
         });
 
@@ -177,6 +198,29 @@ public class ConnectPage : ContentPage
         pairModeRow.Add(new Label { Text = "Режим створення пари (Pairing Mode)", TextColor = Color.FromArgb("#a855f7"), FontAttributes = FontAttributes.Bold, VerticalOptions = LayoutOptions.Center }, 0, 0);
         pairModeRow.Add(_pairingModeSwitch, 1, 0);
 
+        var buttonsGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            RowDefinitions =
+            {
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto)
+            },
+            ColumnSpacing = 8,
+            RowSpacing = 8
+        };
+        buttonsGrid.Add(_connectBtn, 0, 0);
+        buttonsGrid.Add(_disconnectBtn, 1, 0);
+        buttonsGrid.Add(_retryBtn, 0, 1);
+        Grid.SetColumnSpan(_retryBtn, 2);
+        buttonsGrid.Add(_discoverBtn, 0, 2);
+        Grid.SetColumnSpan(_discoverBtn, 2);
+
         var formCard = CreateCard(new VerticalStackLayout
         {
             Spacing = 10,
@@ -189,24 +233,28 @@ public class ConnectPage : ContentPage
                 tlsRow,
                 pairModeRow,
                 _pairingSection,
-                new HorizontalStackLayout
-                {
-                    Spacing = 10,
-                    Children = { _connectBtn, _disconnectBtn, _retryBtn }
-                }
+                buttonsGrid
             }
         });
+
+        var syncRow = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Auto)
+            },
+            ColumnSpacing = 8
+        };
+        syncRow.Add(_lastUpdatedLabel, 0, 0);
+        syncRow.Add(_refreshBtn, 1, 0);
 
         var syncCard = CreateCard(new VerticalStackLayout
         {
             Spacing = 8,
             Children =
             {
-                new HorizontalStackLayout
-                {
-                    Spacing = 10,
-                    Children = { _lastUpdatedLabel, _refreshBtn }
-                },
+                syncRow,
                 _attributionLabel
             }
         });
@@ -425,6 +473,92 @@ public class ConnectPage : ContentPage
         finally
         {
             _refreshBtn.IsEnabled = true;
+        }
+    }
+
+    private async Task OnDiscoverClicked()
+    {
+        _discoverBtn.IsEnabled = false;
+        _discoverBtn.Text = "⏳ Пошук у Wi-Fi...";
+        _statusLabel.Text = "Стан: Сканування мережі на відкритий ADB...";
+        _statusLabel.TextColor = Color.FromArgb("#38bdf8");
+
+        try
+        {
+            var found = await Task.Run(async () =>
+            {
+                var baseSubnets = new List<string> { "192.168.0.", "192.168.1.", "100.66.28." };
+                var currentHost = _hostEntry.Text?.Trim() ?? "";
+                if (currentHost.Contains('.'))
+                {
+                    var lastDot = currentHost.LastIndexOf('.');
+                    var prefix = currentHost.Substring(0, lastDot + 1);
+                    if (!string.IsNullOrEmpty(prefix) && !baseSubnets.Contains(prefix))
+                    {
+                        baseSubnets.Insert(0, prefix);
+                    }
+                }
+
+                int.TryParse(_portEntry.Text?.Trim(), out var customPort);
+                var portsToScan = customPort > 0 && customPort != 5555
+                    ? new[] { customPort, 5555 }
+                    : new[] { 5555 };
+
+                foreach (var subnet in baseSubnets)
+                {
+                    var tasks = new List<Task<(string ip, int port)?>>();
+                    for (int i = 1; i <= 254; i++)
+                    {
+                        var ip = $"{subnet}{i}";
+                        foreach (var port in portsToScan)
+                        {
+                            tasks.Add(Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    using var tcp = new TcpClient();
+                                    var connectTask = tcp.ConnectAsync(ip, port);
+                                    if (await Task.WhenAny(connectTask, Task.Delay(120)) == connectTask && tcp.Connected)
+                                    {
+                                        return (string ip, int port)? (ip, port);
+                                    }
+                                }
+                                catch { }
+                                return null;
+                            }));
+                        }
+                    }
+
+                    var results = await Task.WhenAll(tasks);
+                    var match = results.FirstOrDefault(r => r.HasValue);
+                    if (match.HasValue) return match.Value;
+                }
+                return null;
+            });
+
+            if (found.HasValue)
+            {
+                _hostEntry.Text = found.Value.ip;
+                _portEntry.Text = found.Value.port.ToString();
+                _statusLabel.Text = $"Знайдено пристрій: {found.Value.ip}:{found.Value.port} ✅";
+                _statusLabel.TextColor = Color.FromArgb("#4ade80");
+                await DisplayAlert("Знайдено пристрій", $"Виявлено активний ADB сервіс:\n{found.Value.ip}:{found.Value.port}\n\nНатисніть «Підключитися».", "OK");
+            }
+            else
+            {
+                _statusLabel.Text = "Стан: Пристроїв не знайдено";
+                _statusLabel.TextColor = Color.FromArgb("#f87171");
+                await DisplayAlert("Пошук завершено", "У локальній підмережі не знайдено пристроїв зі стандартним портом 5555.\nЯкщо ви використовуєте випадковий порт Wireless Debugging, введіть його вручну з екрана розробника.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Помилка сканування", ex.Message, "OK");
+        }
+        finally
+        {
+            _discoverBtn.IsEnabled = true;
+            _discoverBtn.Text = "🔍 Автопошук пристрою у Wi-Fi";
         }
     }
 
