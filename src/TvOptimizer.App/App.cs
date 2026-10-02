@@ -22,51 +22,41 @@ public class App : Application
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        var connectNav = new NavigationPage(new ConnectPage())
+        var connectPage = new ConnectPage
         {
             Title = "🔌 Підключення",
-            BarBackgroundColor = Color.FromArgb("#0f172a"),
-            BarTextColor = Colors.White,
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        var auditNav = new NavigationPage(new AuditPage())
+        var auditPage = new AuditPage
         {
             Title = "🛡️ Аудит",
-            BarBackgroundColor = Color.FromArgb("#0f172a"),
-            BarTextColor = Colors.White,
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        var tweaksNav = new NavigationPage(new TweaksPage())
+        var tweaksPage = new TweaksPage
         {
             Title = "⚡ Твіки",
-            BarBackgroundColor = Color.FromArgb("#0f172a"),
-            BarTextColor = Colors.White,
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        var remoteNav = new NavigationPage(new RemoteControlPage())
+        var remotePage = new RemoteControlPage
         {
             Title = "🎮 Пульт",
-            BarBackgroundColor = Color.FromArgb("#0f172a"),
-            BarTextColor = Colors.White,
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        var diagNav = new NavigationPage(new DiagnosticsPage())
+        var diagPage = new DiagnosticsPage
         {
             Title = "📊 Діагностика",
-            BarBackgroundColor = Color.FromArgb("#0f172a"),
-            BarTextColor = Colors.White,
             BackgroundColor = Color.FromArgb("#0f172a")
         };
 
-        tabbedPage.Children.Add(connectNav);
-        tabbedPage.Children.Add(auditNav);
-        tabbedPage.Children.Add(tweaksNav);
-        tabbedPage.Children.Add(remoteNav);
-        tabbedPage.Children.Add(diagNav);
+        tabbedPage.Children.Add(connectPage);
+        tabbedPage.Children.Add(auditPage);
+        tabbedPage.Children.Add(tweaksPage);
+        tabbedPage.Children.Add(remotePage);
+        tabbedPage.Children.Add(diagPage);
 
         return new Window(tabbedPage);
     }
