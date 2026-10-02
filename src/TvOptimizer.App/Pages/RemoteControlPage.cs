@@ -90,9 +90,9 @@ public class RemoteControlPage : ContentPage
         grid.Add(btnRebootRecovery, 0, 7);
         Grid.SetColumnSpan(btnRebootRecovery, 3);
 
-        Content = new StackLayout
+        Content = new ScrollView
         {
-            Children = { _statusLabel, grid }
+            Content = grid
         };
     }
 
