@@ -20,6 +20,7 @@
     <AndroidSigningKeyAlias>androiddebugkey</AndroidSigningKeyAlias>
     <AndroidSigningKeyPass>android</AndroidSigningKeyPass>
     <AndroidSigningStorePass>android</AndroidSigningStorePass>
+    <RunAOTCompilation>false</RunAOTCompilation>
   </PropertyGroup>
 
   <ItemGroup>
