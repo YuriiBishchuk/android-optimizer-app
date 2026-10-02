@@ -155,7 +155,7 @@ public class AuditPage : ContentPage
             var deviceConfig = ConfigSync.Current.LastDevice;
             var curatedTier2 = ConfigSync.Current.CuratedTier2;
 
-            var results = AuditEngine.Run(packages, deviceConfig, curatedTier2, ConfigSync.Current.UadApps);
+            var results = AuditEngine.Run(packages, deviceConfig, curatedTier2, ConfigSync.Current.UadApps)
                 .OrderBy(r => GetTierSortOrder(r.Tier))
                 .ThenBy(r => r.PackageName)
                 .ToList();
