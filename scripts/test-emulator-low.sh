@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
+export JAVA_HOME="${JAVA_HOME:-/opt/data/profiles/developer/home/jdk/jdk-17.0.12+7}"
+export PATH="$JAVA_HOME/bin:$PATH"
+
 # Use ANDROID_HOME if set, else default
 SDK_DIR="${ANDROID_HOME:-/opt/android-sdk}"
 EMULATOR="$SDK_DIR/emulator/emulator"
